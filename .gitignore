@@ -1,0 +1,12 @@
+*.a
+*.o
+
+session.vim
+.tags
+
+/doc/*.html
+
+/examples/http-server
+/examples/uri
+
+/tests/uri
