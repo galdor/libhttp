@@ -85,7 +85,6 @@ http_request_parse(const char *data, size_t sz,
 
     if (http_method_parse(ptr, toklen, &request->method) == -1)
         HTTP_FAIL(HTTP_501_NOT_IMPLEMENTED, NULL);
-    printf(">> method: %s\n", http_method_to_string(request->method));
 
     ptr += toklen + 1;
     len -= toklen + 1;
@@ -98,8 +97,6 @@ http_request_parse(const char *data, size_t sz,
         HTTP_TRUNCATED();
     }
     request->target = c_strndup(ptr, toklen);
-
-    printf(">> target: %s\n", request->target);
 
     if (strcmp(request->target, "*") == 0) {
         if (request->method != HTTP_OPTIONS)
@@ -137,7 +134,6 @@ http_request_parse(const char *data, size_t sz,
 
     if (http_version_parse(ptr, toklen, &request->version) == -1)
         HTTP_FAIL(HTTP_505_HTTP_VERSION_NOT_SUPPORTED, NULL);
-    printf(">> version: %s\n", http_version_to_string(request->version));
 
     ptr += toklen;
     len -= toklen;
@@ -217,7 +213,6 @@ http_request_parse(const char *data, size_t sz,
         value = c_strndup(value_start, value_length);
 
         http_request_add_header_nocopy(request, name, value);
-        printf(">> header '%s': '%s'\n", name, value);
 
         /* End of header */
         if (len < 2)
@@ -252,7 +247,6 @@ http_request_parse(const char *data, size_t sz,
 
     request->body_sz = request->content_length;
     request->body = c_strndup(ptr, request->content_length);
-    printf(">> body: %zu bytes\n", request->body_sz);
 
     ptr += request->body_sz;
     len -= request->body_sz;
