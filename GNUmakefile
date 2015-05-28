@@ -115,12 +115,10 @@ install: lib
 	mkdir -p $(libdir) $(incdir) $(bindir)
 	install -m 644 $(libhttp_LIB) $(libdir)
 	install -m 644 $(libhttp_PUBINC) $(incdir)
-	install -m 755 $(examples_BIN) $(bindir)
 
 uninstall:
 	$(RM) $(addprefix $(libdir)/,$(libhttp_LIB))
 	$(RM) $(addprefix $(incdir)/,$(libhttp_PUBINC))
-	$(RM) $(addprefix $(bindir)/,$(examples_BIN))
 
 tags:
 	ctags -o .tags -a $(wildcard src/*.[hc])
