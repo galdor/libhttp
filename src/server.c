@@ -147,12 +147,19 @@ http_server_conn_reply_error(struct http_server_conn *conn,
                              struct http_request *request,
                              enum http_status status,
                              struct http_headers *headers,
-                             const char *error) {
+                             const char *fmt, ...) {
     struct http_response *response;
     char *body;
     int body_sz;
 
-    if (error) {
+    if (fmt) {
+        char error[C_ERROR_BUFSZ];
+        va_list ap;
+
+        va_start(ap, fmt);
+        vsnprintf(error, C_ERROR_BUFSZ, fmt, ap);
+        va_end(ap);
+
         body_sz = c_asprintf(&body, "<h1>%d %s</h1><p>%s</p>",
                              status, http_status_to_string(status), error);
     } else {
@@ -254,7 +261,7 @@ http_server_conn_on_data(struct http_server_conn *conn) {
                               c_get_error(), status,
                               http_status_to_string(status));
             http_server_conn_reply_error(conn, NULL, status, NULL,
-                                         c_get_error());
+                                         "%s", c_get_error());
             return;
         } else if (ret == 0) {
             http_server_trace(server, "truncated request");

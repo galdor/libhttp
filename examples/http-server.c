@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <inttypes.h>
 #include <signal.h>
 
 #include "http.h"
@@ -36,6 +37,8 @@ static void httpex_on_server_event(struct http_server *,
                                    void *);
 static int httpex_on_request_root_get(struct http_server_conn *,
                                       struct http_request *, void *);
+static int httpex_on_request_number_get(struct http_server_conn *,
+                                        struct http_request *, void *);
 
 static struct httpex httpex;
 
@@ -87,6 +90,8 @@ main(int argc, char **argv) {
 
     http_router_bind(httpex.router, "/", HTTP_GET,
                      httpex_on_request_root_get, NULL);
+    http_router_bind(httpex.router, "/number/?", HTTP_GET,
+                     httpex_on_request_number_get, NULL);
 
     httpex.server = http_server_new(httpex.base, httpex.router);
     http_server_set_event_cb(httpex.server, httpex_on_server_event, NULL);
@@ -177,5 +182,26 @@ httpex_on_request_root_get(struct http_server_conn *conn,
                            struct http_request *request, void *arg) {
     http_server_conn_reply_string(conn, request, HTTP_200_OK, NULL,
                                   "hello world\n");
+    return 0;
+}
+
+static int
+httpex_on_request_number_get(struct http_server_conn *conn,
+                             struct http_request *request, void *arg) {
+    char buf[1024];
+    const char *string;
+    int64_t number;
+
+    string = http_request_path_segment(request, 1);
+    if (c_parse_i64(string, &number, NULL) == -1) {
+        http_server_conn_reply_error(conn, request, HTTP_406_NOT_ACCEPTABLE,
+                                     NULL, "cannot parse number: %s",
+                                     c_get_error());
+        return -1;
+    }
+
+    snprintf(buf, sizeof(buf), "got number %"PRIi64"\n", number);
+
+    http_server_conn_reply_string(conn, request, HTTP_200_OK, NULL, buf);
     return 0;
 }

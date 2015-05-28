@@ -151,6 +151,8 @@ const char *http_request_nth_header(const struct http_request *, size_t,
                                     const char **);
 const char *http_request_header(const struct http_request *, const char *);
 
+const char *http_request_path_segment(const struct http_request *, size_t);
+
 /* Router */
 struct http_router;
 struct http_server_conn;
@@ -190,7 +192,8 @@ void http_server_stop(struct http_server *);
 /* Server connection */
 int http_server_conn_reply_error(struct http_server_conn *,
                                  struct http_request *, enum http_status,
-                                 struct http_headers *, const char *);
+                                 struct http_headers *, const char *, ...)
+    __attribute__ ((format(printf, 5, 6)));
 int http_server_conn_reply_empty(struct http_server_conn *,
                                  struct http_request *, enum http_status,
                                  struct http_headers *);

@@ -299,6 +299,11 @@ http_request_header(const struct http_request *request, const char *name) {
     return http_headers_header(request->headers, name);
 }
 
+const char *
+http_request_path_segment(const struct http_request *request, size_t idx) {
+    return http_path_segment(request->target_path, idx);
+}
+
 bool
 http_request_can_have_body(const struct http_request *request) {
     return request->method == HTTP_POST
