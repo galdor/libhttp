@@ -130,15 +130,17 @@ const char *http_headers_nth_header(struct http_headers *, size_t, const char **
 const char *http_headers_header(struct http_headers *, const char *);
 bool http_headers_has_header(struct http_headers *, const char *);
 
-void http_headers_add(struct http_headers *, const char *,
-                              const char *);
+void http_headers_add(struct http_headers *, const char *, const char *);
 void http_headers_add_nocopy(struct http_headers *, char *, char *);
 void http_headers_set(struct http_headers *, const char *, const char *);
+void http_headers_set_nocopy(struct http_headers *, char *, char *);
 void http_headers_set_vprintf(struct http_headers *, const char *,
                               const char *, va_list);
 void http_headers_set_printf(struct http_headers *, const char *,
                              const char *, ...)
     __attribute__ ((format(printf, 3, 4)));
+
+void http_headers_merge_nocopy(struct http_headers *, struct http_headers *);
 
 /* Request */
 struct http_request;
@@ -159,8 +161,8 @@ typedef int (*http_route_cb)(struct http_server_conn *,
 struct http_router *http_router_new(void);
 void http_router_delete(struct http_router *);
 
-void http_router_bind(struct http_router *, const char *,
-                      http_route_cb, void *);
+int http_router_bind(struct http_router *, const char *, enum http_method,
+                     http_route_cb, void *);
 
 /* Server */
 struct http_server;
@@ -176,7 +178,7 @@ typedef void (*http_server_event_cb)(struct http_server *,
                                      enum http_server_event, void *,
                                      void *);
 
-struct http_server *http_server_new(struct io_base *);
+struct http_server *http_server_new(struct io_base *, struct http_router *);
 void http_server_delete(struct http_server *);
 
 void http_server_set_event_cb(struct http_server *,
@@ -184,5 +186,19 @@ void http_server_set_event_cb(struct http_server *,
 
 int http_server_listen(struct http_server *, const char *, uint16_t);
 void http_server_stop(struct http_server *);
+
+/* Server connection */
+int http_server_conn_reply_error(struct http_server_conn *,
+                                 struct http_request *, enum http_status,
+                                 struct http_headers *, const char *);
+int http_server_conn_reply_empty(struct http_server_conn *,
+                                 struct http_request *, enum http_status,
+                                 struct http_headers *);
+int http_server_conn_reply_data(struct http_server_conn *,
+                                struct http_request *, enum http_status,
+                                struct http_headers *, const void *, size_t);
+int http_server_conn_reply_string(struct http_server_conn *,
+                                  struct http_request *, enum http_status,
+                                  struct http_headers *, const char *);
 
 #endif

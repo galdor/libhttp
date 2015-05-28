@@ -22,6 +22,7 @@
 struct httpex {
     struct io_base *base;
     struct http_server *server;
+    struct http_router *router;
     bool do_exit;
 };
 
@@ -33,6 +34,8 @@ static void httpex_on_signal(int, void *);
 static void httpex_on_server_event(struct http_server *,
                                    enum http_server_event, void *,
                                    void *);
+static int httpex_on_request_root_get(struct http_server_conn *,
+                                      struct http_request *, void *);
 
 static struct httpex httpex;
 
@@ -80,7 +83,12 @@ main(int argc, char **argv) {
     if (io_base_watch_signal(httpex.base, SIGTERM, httpex_on_signal, NULL) == -1)
         httpex_die("cannot watch signal: %s", c_get_error());
 
-    httpex.server = http_server_new(httpex.base);
+    httpex.router = http_router_new();
+
+    http_router_bind(httpex.router, "/", HTTP_GET,
+                     httpex_on_request_root_get, NULL);
+
+    httpex.server = http_server_new(httpex.base, httpex.router);
     http_server_set_event_cb(httpex.server, httpex_on_server_event, NULL);
 
 #if 0
@@ -105,6 +113,7 @@ main(int argc, char **argv) {
     }
 
     http_server_delete(httpex.server);
+    http_router_delete(httpex.router);
     io_base_delete(httpex.base);
 
     if (use_ssl)
@@ -161,4 +170,12 @@ httpex_on_server_event(struct http_server *server,
         httpex.do_exit = true;
         break;
     }
+}
+
+static int
+httpex_on_request_root_get(struct http_server_conn *conn,
+                           struct http_request *request, void *arg) {
+    http_server_conn_reply_string(conn, request, HTTP_200_OK, NULL,
+                                  "hello world\n");
+    return 0;
 }

@@ -146,6 +146,7 @@ int
 http_server_conn_reply_error(struct http_server_conn *conn,
                              struct http_request *request,
                              enum http_status status,
+                             struct http_headers *headers,
                              const char *error) {
     struct http_response *response;
     char *body;
@@ -176,10 +177,16 @@ http_server_conn_reply_error(struct http_server_conn *conn,
 int
 http_server_conn_reply_empty(struct http_server_conn *conn,
                              struct http_request *request,
-                             enum http_status status) {
+                             enum http_status status,
+                             struct http_headers *headers) {
     struct http_response *response;
 
     response = http_response_new(status);
+
+    if (headers) {
+        http_headers_merge_nocopy(response->headers, headers);
+        http_headers_delete(headers);
+    }
 
     return http_server_conn_send_response(conn, request, response);
 }
@@ -188,10 +195,16 @@ int
 http_server_conn_reply_data(struct http_server_conn *conn,
                             struct http_request *request,
                             enum http_status status,
+                            struct http_headers *headers,
                             const void *data, size_t sz) {
     struct http_response *response;
 
     response = http_response_new(status);
+
+    if (headers) {
+        http_headers_merge_nocopy(response->headers, headers);
+        http_headers_delete(headers);
+    }
 
     response->body_sz = sz;
     response->body = c_memdup(data, sz);
@@ -203,10 +216,16 @@ int
 http_server_conn_reply_string(struct http_server_conn *conn,
                               struct http_request *request,
                               enum http_status status,
+                              struct http_headers *headers,
                               const char *string) {
     struct http_response *response;
 
     response = http_response_new(status);
+
+    if (headers) {
+        http_headers_merge_nocopy(response->headers, headers);
+        http_headers_delete(headers);
+    }
 
     response->body_sz = strlen(string);
     response->body = c_strndup(string, response->body_sz);
@@ -234,7 +253,8 @@ http_server_conn_on_data(struct http_server_conn *conn) {
             http_server_error(server, "cannot parse request: %s (%d %s)",
                               c_get_error(), status,
                               http_status_to_string(status));
-            http_server_conn_reply_error(conn, NULL, status, c_get_error());
+            http_server_conn_reply_error(conn, NULL, status, NULL,
+                                         c_get_error());
             return;
         } else if (ret == 0) {
             http_server_trace(server, "truncated request");
@@ -250,16 +270,29 @@ http_server_conn_on_data(struct http_server_conn *conn) {
 static void
 http_server_conn_on_request(struct http_server_conn *conn,
                             struct http_request *request) {
-    bool do_disconnect;
-
-    do_disconnect = http_request_close_connection(request);
+    const struct http_route *route;
+    enum http_status status;
+    bool do_close;
 
     c_queue_push(conn->requests, request);
 
-    /* TODO call handler */
-    http_server_conn_reply_string(conn, request, HTTP_200_OK, "all good\n");
+    do_close = http_request_close_connection(request);
 
-    if (do_disconnect) {
+    route = http_router_find_route(conn->server->router,
+                                   request->method, request->target_path,
+                                   &status);
+    if (!route) {
+        http_server_conn_reply_error(conn, request, status, NULL, NULL);
+        return;
+    }
+
+    if (route->cb(conn, request, route->cb_arg) == -1) {
+        http_server_error(conn->server, "connection error: %s", c_get_error());
+        http_server_conn_disconnect(conn);
+        return;
+    }
+
+    if (do_close) {
         http_server_conn_disconnect(conn);
         return;
     }
@@ -273,7 +306,7 @@ static void http_server_on_tcp_event(struct io_tcp_server *,
                                      enum io_tcp_server_event, void *);
 
 struct http_server *
-http_server_new(struct io_base *io_base) {
+http_server_new(struct io_base *io_base, struct http_router *router) {
     struct http_server *server;
 
     server = c_malloc0(sizeof(struct http_server));
@@ -282,6 +315,8 @@ http_server_new(struct io_base *io_base) {
 
     server->tcp_server = io_tcp_server_new(io_base,
                                            http_server_on_tcp_event, server);
+
+    server->router = router;
 
     return server;
 }

@@ -110,19 +110,26 @@ http_headers_add_nocopy(struct http_headers *headers,
 void
 http_headers_set(struct http_headers *headers,
                  const char *name, const char *value) {
+    return http_headers_set_nocopy(headers, c_strdup(name), c_strdup(value));
+}
+
+void
+http_headers_set_nocopy(struct http_headers *headers, char *name, char *value) {
     for (size_t i = 0; i < c_vector_length(headers->headers); i++) {
         struct http_header *header;
 
         header = c_vector_entry(headers->headers, i);
 
         if (strcasecmp(header->name, name) == 0) {
+            c_free(name);
+
             c_free(header->value);
-            header->value = c_strdup(value);
+            header->value = value;
             return;
         }
     }
 
-    http_headers_add(headers, name, value);
+    http_headers_add_nocopy(headers, name, value);
 }
 
 void
@@ -143,4 +150,18 @@ http_headers_set_header_printf(struct http_headers *headers,
     va_start(ap, fmt);
     http_headers_set_vprintf(headers, name, fmt, ap);
     va_end(ap);
+}
+
+void
+http_headers_merge_nocopy(struct http_headers *headers,
+                          struct http_headers *src) {
+    for (size_t i = 0; i < c_vector_length(src->headers); i++) {
+        struct http_header *header;
+
+        header = c_vector_entry(headers->headers, i);
+
+        http_headers_set_nocopy(headers, header->name, header->value);
+    }
+
+    c_vector_clear(src->headers);
 }

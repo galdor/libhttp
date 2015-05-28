@@ -154,6 +154,10 @@ void http_response_set_header_printf(struct http_response *, const char *,
 
 /* Router */
 struct http_route {
+    char *path_string;
+    struct http_path *path;
+    enum http_method method;
+
     http_route_cb cb;
     void *cb_arg;
 };
@@ -162,16 +166,20 @@ struct http_route *http_route_new(void);
 void http_route_delete(struct http_route *);
 
 struct http_router {
-    /* TODO */
+    struct c_ptr_vector *routes;
 };
 
 const struct http_route *
-http_router_find_route(const struct http_router *, const struct http_uri *);
+http_router_find_route(const struct http_router *,
+                       enum http_method, const struct http_path *,
+                       enum http_status *);
 
 /* Server */
 struct http_server {
     struct io_base *io_base;
     struct io_tcp_server *tcp_server;
+
+    struct http_router *router;
 
     http_server_event_cb event_cb;
     void *event_cb_arg;
@@ -204,16 +212,5 @@ int http_server_conn_write_response(struct http_server_conn *,
 int http_server_conn_send_response(struct http_server_conn *,
                                    struct http_request *,
                                    struct http_response *);
-int http_server_conn_reply_error(struct http_server_conn *,
-                                 struct http_request *, enum http_status,
-                                 const char *);
-int http_server_conn_reply_empty(struct http_server_conn *,
-                                 struct http_request *, enum http_status);
-int http_server_conn_reply_data(struct http_server_conn *,
-                                struct http_request *, enum http_status,
-                                const void *, size_t);
-int http_server_conn_reply_string(struct http_server_conn *,
-                                  struct http_request *, enum http_status,
-                                  const char *);
 
 #endif
