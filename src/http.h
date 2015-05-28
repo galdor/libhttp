@@ -183,6 +183,13 @@ typedef void (*http_server_event_cb)(struct http_server *,
 struct http_server *http_server_new(struct io_base *, struct http_router *);
 void http_server_delete(struct http_server *);
 
+const char *http_server_host(const struct http_server *);
+uint16_t http_server_port(const struct http_server *);
+
+size_t http_server_nb_listening_addresses(const struct http_server *);
+const struct io_address *
+http_server_nth_listening_address(const struct http_server *, size_t);
+
 void http_server_set_event_cb(struct http_server *,
                               http_server_event_cb, void *);
 

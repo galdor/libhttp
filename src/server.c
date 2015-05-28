@@ -338,6 +338,30 @@ http_server_delete(struct http_server *server) {
     c_free0(server, sizeof(struct http_server));
 }
 
+const char *
+http_server_host(const struct http_server *server) {
+    return io_tcp_server_host(server->tcp_server);
+}
+
+uint16_t
+http_server_port(const struct http_server *server) {
+    return io_tcp_server_port(server->tcp_server);
+}
+
+size_t
+http_server_nb_listening_addresses(const struct http_server *server) {
+    return io_tcp_server_nb_listeners(server->tcp_server);
+}
+
+const struct io_address *
+http_server_nth_listening_address(const struct http_server *server,
+                                  size_t idx) {
+    const struct io_tcp_listener *listener;
+
+    listener = io_tcp_server_nth_listener(server->tcp_server, idx);
+    return io_tcp_listener_address(listener);
+}
+
 void
 http_server_set_event_cb(struct http_server *server,
                          http_server_event_cb cb, void *cb_arg) {
