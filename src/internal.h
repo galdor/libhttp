@@ -94,9 +94,11 @@ enum http_connection_option {
 
 struct http_request {
     enum http_method method;
+    enum http_version version;
+
     char *target;
     struct http_uri *target_uri;
-    enum http_version version;
+    struct http_path *target_path;
 
     struct http_headers *headers;
 

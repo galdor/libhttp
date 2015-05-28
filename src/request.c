@@ -38,6 +38,7 @@ http_request_delete(struct http_request *request) {
 
     c_free(request->target);
     http_uri_delete(request->target_uri);
+    http_path_delete(request->target_path);
 
     http_headers_delete(request->headers);
 
@@ -104,11 +105,23 @@ http_request_parse(const char *data, size_t sz,
         if (request->method != HTTP_OPTIONS)
             HTTP_FAIL(HTTP_400_BAD_REQUEST, "invalid asterisk target");
     } else {
-        request->target_uri = http_uri_parse(request->target);
-        if (!request->target_uri) {
+        struct http_uri *uri;
+        struct http_path *path;
+
+        uri = http_uri_parse(request->target);
+        if (!uri) {
             HTTP_FAIL(HTTP_400_BAD_REQUEST, "invalid request target: %s",
                       c_get_error());
         }
+
+        path = http_path_parse(uri->path);
+        if (!path) {
+            HTTP_FAIL(HTTP_400_BAD_REQUEST, "invalid request target path: %s",
+                      c_get_error());
+        }
+
+        request->target_uri = uri;
+        request->target_path = path;
     }
 
     ptr += toklen + 1;
