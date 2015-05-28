@@ -37,6 +37,11 @@ int http_format_timestamp(char buf[static HTTP_RFC1123_DATE_BUFSZ], size_t,
 /* Strings */
 void http_string_vector_delete(struct c_ptr_vector *);
 
+/* Path */
+struct http_path {
+    struct c_ptr_vector *segments;
+};
+
 /* URI */
 struct http_uri {
     char *scheme;

@@ -163,6 +163,8 @@ TEST(base) {
     TEST_STRING_EQ(uri->query, "foo");
     TEST_STRING_EQ(uri->fragment, "bar");
     http_uri_delete(uri);
+
+#undef HTTPT_PARSE_URI
 }
 
 TEST(invalid) {
@@ -198,13 +200,15 @@ TEST(invalid) {
     /* TODO Query */
 
     /* TODO Fragment */
+
+#undef HTTPT_INVALID_URI
 }
 
 int
 main(int argc, char **argv) {
     struct test_suite *suite;
 
-    suite = test_suite_new("uris");
+    suite = test_suite_new("uri");
     test_suite_initialize_from_args(suite, argc, argv);
 
     test_suite_start(suite);

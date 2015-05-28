@@ -21,6 +21,18 @@
 #include <core.h>
 #include <io.h>
 
+/* Path */
+struct http_path *http_path_new(void);
+void http_path_delete(struct http_path *);
+
+struct http_path *http_path_parse(const char *);
+
+size_t http_path_nb_segments(const struct http_path *);
+const char *http_path_segment(const struct http_path *, size_t);
+
+void http_path_add_segment(struct http_path *, const char *);
+void http_path_add_segment2(struct http_path *, const char *, size_t);
+
 /* URI */
 struct http_uri *http_uri_new(void);
 void http_uri_delete(struct http_uri *);

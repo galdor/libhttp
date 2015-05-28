@@ -9,4 +9,5 @@ session.vim
 /examples/http-server
 /examples/uri
 
+/tests/path
 /tests/uri
