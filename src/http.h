@@ -205,6 +205,8 @@ int http_server_listen(struct http_server *, const char *, uint16_t);
 void http_server_stop(struct http_server *);
 
 /* Server connection */
+void http_server_conn_disconnect(struct http_server_conn *);
+
 int http_server_conn_reply_error(struct http_server_conn *,
                                  struct http_request *, enum http_status,
                                  struct http_headers *, const char *, ...)

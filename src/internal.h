@@ -208,8 +208,6 @@ struct http_server_conn *http_server_conn_new(struct http_server *,
                                               struct io_tcp_server_conn *);
 void http_server_conn_delete(struct http_server_conn *);
 
-void http_server_conn_disconnect(struct http_server_conn *);
-
 int http_server_conn_write_response(struct http_server_conn *,
                                     const struct http_response *);
 int http_server_conn_send_response(struct http_server_conn *,
