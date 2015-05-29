@@ -158,7 +158,7 @@ http_headers_merge_nocopy(struct http_headers *headers,
     for (size_t i = 0; i < c_vector_length(src->headers); i++) {
         struct http_header *header;
 
-        header = c_vector_entry(headers->headers, i);
+        header = c_vector_entry(src->headers, i);
 
         http_headers_set_nocopy(headers, header->name, header->value);
     }
