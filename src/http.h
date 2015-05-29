@@ -179,6 +179,10 @@ enum http_server_event {
 typedef void (*http_server_event_cb)(struct http_server *,
                                      enum http_server_event, void *,
                                      void *);
+typedef int (*http_server_error_cb)(struct http_server_conn *,
+                                    struct http_request *,
+                                    enum http_status, struct http_headers *,
+                                    const char *, void *);
 
 struct http_server *http_server_new(struct io_base *, struct http_router *);
 void http_server_delete(struct http_server *);
@@ -192,6 +196,8 @@ http_server_nth_listening_address(const struct http_server *, size_t);
 
 void http_server_set_event_cb(struct http_server *,
                               http_server_event_cb, void *);
+void http_server_set_error_cb(struct http_server *,
+                              http_server_error_cb, void *);
 
 int http_server_enable_ssl(struct http_server *, const struct io_ssl_cfg *);
 
@@ -203,6 +209,7 @@ int http_server_conn_reply_error(struct http_server_conn *,
                                  struct http_request *, enum http_status,
                                  struct http_headers *, const char *, ...)
     __attribute__ ((format(printf, 5, 6)));
+
 int http_server_conn_reply_empty(struct http_server_conn *,
                                  struct http_request *, enum http_status,
                                  struct http_headers *);

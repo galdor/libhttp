@@ -183,6 +183,9 @@ struct http_server {
 
     http_server_event_cb event_cb;
     void *event_cb_arg;
+
+    http_server_error_cb error_cb;
+    void *error_cb_arg;
 };
 
 void http_server_signal_event(struct http_server *,

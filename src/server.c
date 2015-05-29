@@ -148,34 +148,23 @@ http_server_conn_reply_error(struct http_server_conn *conn,
                              enum http_status status,
                              struct http_headers *headers,
                              const char *fmt, ...) {
-    struct http_response *response;
-    char *body;
-    int body_sz;
+    struct http_server *server;
+    char error[C_ERROR_BUFSZ];
+    va_list ap;
+
+    server = conn->server;
+    assert(server->error_cb);
 
     if (fmt) {
-        char error[C_ERROR_BUFSZ];
-        va_list ap;
-
         va_start(ap, fmt);
         vsnprintf(error, C_ERROR_BUFSZ, fmt, ap);
         va_end(ap);
-
-        body_sz = c_asprintf(&body, "<h1>%d %s</h1><p>%s</p>",
-                             status, http_status_to_string(status), error);
-    } else {
-        body_sz = c_asprintf(&body, "<h1>%d %s</h1>",
-                             status, http_status_to_string(status));
     }
 
-    response = http_response_new(status);
-
-    response->body = body;
-    response->body_sz = (size_t)body_sz;
-
-    http_response_add_header(response, "Content-Type", "text/html");
-
-    if (http_server_conn_send_response(conn, request, response) == -1)
+    if (server->error_cb(conn, request, status, headers, (fmt ? error : NULL),
+                            server->error_cb_arg) == -1) {
         return -1;
+    }
 
     http_server_conn_disconnect(conn);
     return 0;
@@ -312,6 +301,12 @@ static void http_server_on_tcp_event(struct io_tcp_server *,
                                      struct io_tcp_server_conn *,
                                      enum io_tcp_server_event, void *);
 
+static int http_server_default_error_cb(struct http_server_conn *,
+                                        struct http_request *,
+                                        enum http_status,
+                                        struct http_headers *,
+                                        const char *, void *);
+
 struct http_server *
 http_server_new(struct io_base *io_base, struct http_router *router) {
     struct http_server *server;
@@ -324,6 +319,8 @@ http_server_new(struct io_base *io_base, struct http_router *router) {
                                            http_server_on_tcp_event, server);
 
     server->router = router;
+
+    server->error_cb = http_server_default_error_cb;
 
     return server;
 }
@@ -367,6 +364,13 @@ http_server_set_event_cb(struct http_server *server,
                          http_server_event_cb cb, void *cb_arg) {
     server->event_cb = cb;
     server->event_cb_arg = cb_arg;
+}
+
+void
+http_server_set_error_cb(struct http_server *server,
+                         http_server_error_cb cb, void *cb_arg) {
+    server->error_cb = cb;
+    server->error_cb_arg = cb_arg;
 }
 
 int
@@ -471,4 +475,34 @@ http_server_on_tcp_event(struct io_tcp_server *tcp_server,
         http_server_conn_on_data(conn);
         break;
     }
+}
+
+static int
+http_server_default_error_cb(struct http_server_conn *conn,
+                             struct http_request *request,
+                             enum http_status status,
+                             struct http_headers *headers,
+                             const char *error, void *arg) {
+    char *body;
+    int body_sz;
+
+    if (error) {
+        body_sz = c_asprintf(&body, "<h1>%d %s</h1><p>%s</p>",
+                             status, http_status_to_string(status), error);
+    } else {
+        body_sz = c_asprintf(&body, "<h1>%d %s</h1>",
+                             status, http_status_to_string(status));
+    }
+
+    if (!headers)
+        headers = http_headers_new();
+    http_headers_set(headers, "Content-Type", "text/html");
+
+    if (http_server_conn_reply_data(conn, request, status, headers,
+                                    body, (size_t)body_sz) == -1) {
+        c_free(body);
+        return -1;
+    }
+
+    return 0;
 }
