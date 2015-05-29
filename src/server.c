@@ -370,6 +370,12 @@ http_server_set_event_cb(struct http_server *server,
 }
 
 int
+http_server_enable_ssl(struct http_server *server,
+                       const struct io_ssl_cfg *cfg) {
+    return io_tcp_server_enable_ssl(server->tcp_server, cfg);
+}
+
+int
 http_server_listen(struct http_server *server,
                    const char *host, uint16_t port) {
     return io_tcp_server_listen(server->tcp_server, host, port);

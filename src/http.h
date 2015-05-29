@@ -193,6 +193,8 @@ http_server_nth_listening_address(const struct http_server *, size_t);
 void http_server_set_event_cb(struct http_server *,
                               http_server_event_cb, void *);
 
+int http_server_enable_ssl(struct http_server *, const struct io_ssl_cfg *);
+
 int http_server_listen(struct http_server *, const char *, uint16_t);
 void http_server_stop(struct http_server *);
 
