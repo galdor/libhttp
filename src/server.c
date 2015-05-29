@@ -179,7 +179,8 @@ http_server_conn_reply_empty(struct http_server_conn *conn,
                              struct http_headers *headers) {
     struct http_response *response;
 
-    response = http_response_new(status);
+    response = http_response_new();
+    response->status = status;
 
     if (headers) {
         http_headers_merge_nocopy(response->headers, headers);
@@ -197,7 +198,8 @@ http_server_conn_reply_data(struct http_server_conn *conn,
                             const void *data, size_t sz) {
     struct http_response *response;
 
-    response = http_response_new(status);
+    response = http_response_new();
+    response->status = status;
 
     if (headers) {
         http_headers_merge_nocopy(response->headers, headers);
@@ -218,7 +220,8 @@ http_server_conn_reply_string(struct http_server_conn *conn,
                               const char *string) {
     struct http_response *response;
 
-    response = http_response_new(status);
+    response = http_response_new();
+    response->status = status;
 
     if (headers) {
         http_headers_merge_nocopy(response->headers, headers);
@@ -273,7 +276,6 @@ http_server_conn_on_data(struct http_server_conn *conn) {
                                          "%s", c_get_error());
             return;
         } else if (ret == 0) {
-            http_server_trace(server, "truncated request");
             return;
         }
 

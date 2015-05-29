@@ -153,6 +153,40 @@ const char *http_request_header(const struct http_request *, const char *);
 
 const char *http_request_path_segment(const struct http_request *, size_t);
 
+/* Response */
+struct http_response;
+
+size_t http_response_nb_headers(const struct http_response *);
+bool http_response_has_header(const struct http_response *, const char *);
+const char *http_response_nth_header(const struct http_response *, size_t,
+                                     const char **);
+const char *http_response_header(const struct http_response *, const char *);
+
+/* Client */
+struct http_client;
+
+enum http_client_event {
+    HTTP_CLIENT_EVENT_TRACE,
+    HTTP_CLIENT_EVENT_ERROR,
+    HTTP_CLIENT_EVENT_CONN_ESTABLISHED,
+    HTTP_CLIENT_EVENT_CONN_FAILED,
+    HTTP_CLIENT_EVENT_CONN_CLOSED,
+    HTTP_CLIENT_EVENT_CONN_LOST,
+};
+
+typedef void (*http_client_event_cb)(struct http_client *,
+                                     enum http_client_event, void *,
+                                     void *);
+
+struct http_client *http_client_new(struct io_base *);
+void http_client_delete(struct http_client *);
+
+void http_client_set_event_cb(struct http_client *,
+                              http_client_event_cb, void *);
+
+int http_client_connect(struct http_client *, const char *, uint16_t);
+void http_client_disconnect(struct http_client *);
+
 /* Router */
 struct http_router;
 struct http_server_conn;

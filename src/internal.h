@@ -68,11 +68,13 @@ const char *http_version_to_string(enum http_version);
 
 const char *http_status_to_string(enum http_status);
 
+#define HTTP_REASON_MAX_LENGTH 256
+
 struct c_ptr_vector *http_list_parse(const char *);
 
 /* Header */
 #define HTTP_HEADER_NAME_MAX_LENGTH 256
-#define HTTP_HEADER_VALUE_MAX_LENGTH 256
+#define HTTP_HEADER_VALUE_MAX_LENGTH 2048
 
 struct http_header {
     char *name;
@@ -82,6 +84,9 @@ struct http_header {
 struct http_headers {
     struct c_vector *headers;
 };
+
+int http_headers_parse(const char *, size_t, struct http_headers **,
+                       enum http_status *, size_t *);
 
 /* Request */
 #define HTTP_REQUEST_TARGET_MAX_LENGTH 2048
@@ -105,6 +110,7 @@ struct http_request {
     void *body;
     size_t body_sz;
 
+    /* When the request was parsed, not generated */
     bool has_content_length;
     size_t content_length;
 
@@ -124,20 +130,30 @@ bool http_request_can_have_body(const struct http_request *);
 bool http_request_close_connection(const struct http_request *);
 
 /* Response */
+#define HTTP_RESPONSE_MAX_CONTENT_LENGTH (64 * 1024 * 1024)
+
 struct http_response {
     struct http_request *request;
 
     enum http_version version;
     enum http_status status;
+    char *reason;
 
     struct http_headers *headers;
 
     void *body;
     size_t body_sz;
+
+    /* When the response was parsed, not generated */
+    bool has_content_length;
+    size_t content_length;
 };
 
-struct http_response *http_response_new(enum http_status);
+struct http_response *http_response_new(void);
 void http_response_delete(struct http_response *);
+
+int http_response_parse(const char *, size_t, struct http_response **,
+                        size_t *);
 
 void http_response_finalize(struct http_response *);
 void http_response_to_buffer(const struct http_response *, struct c_buffer *);
@@ -151,6 +167,26 @@ void http_response_set_header_vprintf(struct http_response *, const char *,
                                       const char *, va_list);
 void http_response_set_header_printf(struct http_response *, const char *,
                                      const char *, ...);
+
+bool http_response_can_have_body(const struct http_response *);
+
+/* Client */
+struct http_client {
+    struct io_base *io_base;
+    struct io_tcp_client *tcp_client;
+
+    http_client_event_cb event_cb;
+    void *event_cb_arg;
+
+    struct c_queue *requests;
+};
+
+void http_client_signal_event(struct http_client *,
+                              enum http_client_event, void *);
+void http_client_trace(struct http_client *, const char *, ...)
+    __attribute__ ((format(printf, 2, 3)));
+void http_client_error(struct http_client *, const char *, ...)
+    __attribute__ ((format(printf, 2, 3)));
 
 /* Router */
 struct http_route {

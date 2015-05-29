@@ -6,6 +6,7 @@ session.vim
 
 /doc/*.html
 
+/examples/http-client
 /examples/http-server
 /examples/uri
 

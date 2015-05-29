@@ -17,14 +17,15 @@
 
 #include "internal.h"
 
+static int http_response_preprocess_headers(struct http_response *);
+
 struct http_response *
-http_response_new(enum http_status status) {
+http_response_new(void) {
     struct http_response *response;
 
     response = c_malloc0(sizeof(struct http_response));
 
     response->version = HTTP_1_1;
-    response->status = status;
     response->headers = http_headers_new();
 
     return response;
@@ -35,11 +36,145 @@ http_response_delete(struct http_response *response) {
     if (!response)
         return;
 
+    c_free(response->reason);
+
     http_headers_delete(response->headers);
 
     c_free(response->body);
 
     c_free0(response, sizeof(struct http_response));
+}
+
+int
+http_response_parse(const char *data, size_t sz,
+                    struct http_response **presponse, size_t *psz) {
+    struct http_response *response;
+    const char *ptr;
+    size_t len, toklen;
+    char status_string[4];
+    size_t status_sz;
+    int32_t status_value;
+
+    ptr = data;
+    len = sz;
+
+#define HTTP_FAIL(fmt_, ...)                  \
+    do {                                      \
+        if (fmt_)                             \
+            c_set_error(fmt_, ##__VA_ARGS__); \
+        http_response_delete(response);       \
+        return -1;                            \
+    } while (0)
+
+#define HTTP_TRUNCATED()                      \
+    do {                                      \
+        http_response_delete(response);       \
+        return 0;                             \
+    } while (0)
+
+    response = http_response_new();
+
+    /* Version */
+    toklen = strcspn(ptr, " ");
+    if (toklen == len) {
+        if (len > HTTP_VERSION_MAX_LENGTH)
+            HTTP_FAIL("invalid version");
+        HTTP_TRUNCATED();
+    }
+
+    if (http_version_parse(ptr, toklen, &response->version) == -1)
+        HTTP_FAIL(NULL);
+
+    ptr += toklen + 1;
+    len -= toklen + 1;
+
+    /* Status */
+    toklen = strcspn(ptr, " ");
+    if (toklen == len) {
+        if (len > 3)
+            HTTP_FAIL("invalid status code");
+        HTTP_TRUNCATED();
+    }
+
+    if (toklen > 3)
+        HTTP_FAIL("invalid status code");
+
+    memcpy(status_string, ptr, toklen);
+    status_string[toklen] = '\0';
+
+    if (c_parse_i32(status_string, &status_value, &status_sz) == -1)
+        HTTP_FAIL("invalid status code");
+    if (status_sz != toklen)
+        HTTP_FAIL("invalid trailing data after status code");
+    response->status = (enum http_status)status_value;
+
+    ptr += toklen + 1;
+    len -= toklen + 1;
+
+    /* Reason */
+    toklen = strcspn(ptr, "\r");
+    if (toklen == len) {
+        if (len > HTTP_REASON_MAX_LENGTH)
+            HTTP_FAIL("reason string too long");
+        HTTP_TRUNCATED();
+    }
+
+    response->reason = c_strndup(ptr, toklen);
+
+    ptr += toklen;
+    len -= toklen;
+
+    /* End of status line */
+    if (len < 2)
+        HTTP_TRUNCATED();
+    if (ptr[0] != '\r' || ptr[1] != '\n')
+        HTTP_FAIL("malformed status line");
+
+    ptr += 2;
+    len -= 2;
+
+    /* Headers */
+    http_headers_delete(response->headers);
+    response->headers = NULL;
+
+    if (http_headers_parse(ptr, len, &response->headers, NULL, &toklen) == -1)
+        HTTP_FAIL(NULL);
+
+    ptr += toklen;
+    len -= toklen;
+
+    if (http_response_preprocess_headers(response) == -1) {
+        http_response_delete(response);
+        return -1;
+    }
+
+    /* Body */
+    if (!http_response_can_have_body(response))
+        goto end;
+
+    /* TODO chunked coding */
+    if (!response->has_content_length)
+        goto end;
+
+    if (response->content_length > HTTP_RESPONSE_MAX_CONTENT_LENGTH)
+        HTTP_FAIL("payload too large");
+
+    if (len < response->content_length)
+        HTTP_TRUNCATED();
+
+    response->body_sz = response->content_length;
+    response->body = c_strndup(ptr, response->content_length);
+
+    ptr += response->body_sz;
+    len -= response->body_sz;
+
+#undef HTTP_FAIL
+#undef HTTP_TRUNCATED
+
+end:
+    *presponse = response;
+    *psz = sz - len;
+    return 1;
 }
 
 void
@@ -125,4 +260,71 @@ http_response_set_header_printf(struct http_response *response,
     va_start(ap, fmt);
     http_headers_set_vprintf(response->headers, name, fmt, ap);
     va_end(ap);
+}
+
+size_t
+http_response_nb_headers(const struct http_response *response) {
+    return http_headers_nb_headers(response->headers);
+}
+
+bool
+http_response_has_header(const struct http_response *response, const char *name) {
+    return http_headers_has_header(response->headers, name);
+}
+
+const char *
+http_response_nth_header(const struct http_response *response, size_t idx,
+                         const char **pvalue) {
+    return http_headers_nth_header(response->headers, idx, pvalue);
+}
+
+const char *
+http_response_header(const struct http_response *response, const char *name) {
+    return http_headers_header(response->headers, name);
+}
+
+bool
+http_response_can_have_body(const struct http_response *response) {
+    if (response->status >= 100 && response->status < 200)
+        return false;
+    if (response->status == HTTP_204_NO_CONTENT)
+        return false;
+    if (response->status == HTTP_304_NOT_MODIFIED)
+        return false;
+
+    return true;
+}
+
+static int
+http_response_preprocess_headers(struct http_response *response) {
+#define HTTP_FAIL(fmt_, ...)                  \
+    do {                                      \
+        if (fmt_)                             \
+            c_set_error(fmt_, ##__VA_ARGS__); \
+        return -1;                            \
+    } while (0)
+
+    for (size_t i = 0; i < http_response_nb_headers(response); i++) {
+        const char *name, *value;
+
+        name = http_response_nth_header(response, i, &value);
+
+#define HTTP_HEADER_IS(name_) (strcasecmp(name, name_) == 0)
+
+        /* -- Content-Length ---------------------------------------------- */
+        if (HTTP_HEADER_IS("Content-Length")) {
+            response->has_content_length = true;
+
+            if (c_parse_size(value, &response->content_length,
+                             NULL) == -1) {
+                HTTP_FAIL("cannot parse %s header: %s", name, c_get_error());
+            }
+        }
+
+#undef HTTP_HEADER_IS
+    }
+
+#undef HTTP_FAIL
+
+    return 0;
 }

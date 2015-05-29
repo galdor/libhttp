@@ -46,6 +46,121 @@ http_headers_delete(struct http_headers *headers) {
     c_free0(headers, sizeof(struct http_headers));
 }
 
+int
+http_headers_parse(const char *data, size_t sz, struct http_headers **pheaders,
+                   enum http_status *pstatus, size_t *psz) {
+    struct http_headers *headers;
+    const char *ptr;
+    size_t len, toklen;
+
+    ptr = data;
+    len = sz;
+
+#define HTTP_FAIL(status_, fmt_, ...)         \
+    do {                                      \
+        if (fmt_)                             \
+            c_set_error(fmt_, ##__VA_ARGS__); \
+        if (pstatus)                          \
+          *pstatus = status_;                 \
+        http_headers_delete(headers);         \
+        return -1;                            \
+    } while (0)
+
+#define HTTP_TRUNCATED()                      \
+    do {                                      \
+        http_headers_delete(headers);         \
+        return 0;                             \
+    } while (0)
+
+    headers = http_headers_new();
+
+    for (;;) {
+        const char *name_start, *value_start;
+        size_t name_length, value_length;
+        char *name, *value;
+
+        if (len >= 2 && ptr[0] == '\r' && ptr[1] == '\n') {
+            ptr += 2;
+            len -= 2;
+            break;
+        }
+
+        /* Name */
+        toklen = strcspn(ptr, ":");
+        if (toklen == len) {
+            if (len > HTTP_HEADER_NAME_MAX_LENGTH)
+                HTTP_FAIL(HTTP_400_BAD_REQUEST, "header name too long");
+            HTTP_TRUNCATED();
+        } else if (toklen == 0) {
+            HTTP_FAIL(HTTP_400_BAD_REQUEST, "empty header name");
+        }
+
+        if (ptr[toklen - 1] == ' ' || ptr[toklen - 1] == '\t')
+            HTTP_FAIL(HTTP_400_BAD_REQUEST, "trailing space after header name");
+
+        name_start = ptr;
+        name_length = toklen;
+
+        ptr += toklen + 1;
+        len -= toklen + 1;
+
+        while (len > 0 && (ptr[0] == ' ' || ptr[0] == '\t')) {
+            ptr++;
+            len--;
+        }
+
+        /* Value */
+        toklen = strcspn(ptr, "\r");
+        if (toklen == len) {
+            if (len > HTTP_HEADER_VALUE_MAX_LENGTH)
+                HTTP_FAIL(HTTP_400_BAD_REQUEST, "header value too long");
+            HTTP_TRUNCATED();
+        } else if (toklen == 0) {
+            HTTP_FAIL(HTTP_400_BAD_REQUEST, "empty header value");
+        }
+
+        value_start = ptr;
+        value_length = toklen;
+
+        while (value_length > 0) {
+            if (ptr[value_length - 1] == ' '
+             || ptr[value_length - 1] == '\t') {
+                value_length--;
+            } else {
+                break;
+            }
+        }
+
+        ptr += toklen;
+        len -= toklen;
+
+        /* Header */
+        name = c_strndup(name_start, name_length);
+        value = c_strndup(value_start, value_length);
+
+        http_headers_add_nocopy(headers, name, value);
+
+        /* End of header */
+        if (len < 2)
+            HTTP_TRUNCATED();
+        if (ptr[0] != '\r' || ptr[1] != '\n')
+            HTTP_FAIL(HTTP_400_BAD_REQUEST, "malformed header");
+
+        ptr += 2;
+        len -= 2;
+
+        if (len > 0 && (ptr[0] == ' ' || ptr[0] == '\t'))
+            HTTP_FAIL(HTTP_400_BAD_REQUEST, "obsolete folded header value");
+    }
+
+#undef HTTP_FAIL
+#undef HTTP_TRUNCATED
+
+    *pheaders = headers;
+    *psz = sz - len;
+    return 1;
+}
+
 size_t
 http_headers_nb_headers(struct http_headers *headers) {
     return c_vector_length(headers->headers);
