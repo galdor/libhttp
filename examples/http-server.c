@@ -188,11 +188,11 @@ httpex_on_request_root_get(struct http_server_conn *conn,
 static int
 httpex_on_request_number_get(struct http_server_conn *conn,
                              struct http_request *request, void *arg) {
-    char buf[1024];
     const char *string;
     int64_t number;
 
     string = http_request_path_segment(request, 1);
+
     if (c_parse_i64(string, &number, NULL) == -1) {
         http_server_conn_reply_error(conn, request, HTTP_406_NOT_ACCEPTABLE,
                                      NULL, "cannot parse number: %s",
@@ -200,8 +200,7 @@ httpex_on_request_number_get(struct http_server_conn *conn,
         return -1;
     }
 
-    snprintf(buf, sizeof(buf), "got number %"PRIi64"\n", number);
-
-    http_server_conn_reply_string(conn, request, HTTP_200_OK, NULL, buf);
+    http_server_conn_reply_printf(conn, request, HTTP_200_OK, NULL,
+                                  "%"PRIi64"\n", number);
     return 0;
 }

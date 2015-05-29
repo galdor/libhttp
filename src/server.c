@@ -231,6 +231,24 @@ http_server_conn_reply_string(struct http_server_conn *conn,
     return http_server_conn_send_response(conn, request, response);
 }
 
+int
+http_server_conn_reply_printf(struct http_server_conn *conn,
+                              struct http_request *request,
+                              enum http_status status,
+                              struct http_headers *headers,
+                              const char *fmt, ...) {
+    va_list ap;
+    char *body;
+    int body_sz;
+
+    va_start(ap, fmt);
+    body_sz = c_vasprintf(&body, fmt, ap);
+    va_end(ap);
+
+    return http_server_conn_reply_data(conn, request, status, headers,
+                                       body, (size_t)body_sz);
+}
+
 static void
 http_server_conn_on_data(struct http_server_conn *conn) {
     struct http_server *server;

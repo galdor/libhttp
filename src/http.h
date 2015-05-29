@@ -221,5 +221,9 @@ int http_server_conn_reply_data(struct http_server_conn *,
 int http_server_conn_reply_string(struct http_server_conn *,
                                   struct http_request *, enum http_status,
                                   struct http_headers *, const char *);
+int http_server_conn_reply_printf(struct http_server_conn *,
+                                  struct http_request *, enum http_status,
+                                  struct http_headers *, const char *, ...)
+    __attribute__ ((format(printf, 5, 6)));
 
 #endif
