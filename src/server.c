@@ -159,10 +159,12 @@ http_server_conn_reply_error(struct http_server_conn *conn,
         va_start(ap, fmt);
         vsnprintf(error, C_ERROR_BUFSZ, fmt, ap);
         va_end(ap);
+    } else {
+        c_strlcpy(error, http_status_to_string(status), C_ERROR_BUFSZ);
     }
 
-    if (server->error_cb(conn, request, status, headers, (fmt ? error : NULL),
-                            server->error_cb_arg) == -1) {
+    if (server->error_cb(conn, request, status, headers, error,
+                         server->error_cb_arg) == -1) {
         return -1;
     }
 
@@ -486,17 +488,12 @@ http_server_default_error_cb(struct http_server_conn *conn,
     char *body;
     int body_sz;
 
-    if (error) {
-        body_sz = c_asprintf(&body, "<h1>%d %s</h1><p>%s</p>",
-                             status, http_status_to_string(status), error);
-    } else {
-        body_sz = c_asprintf(&body, "<h1>%d %s</h1>",
-                             status, http_status_to_string(status));
-    }
-
     if (!headers)
         headers = http_headers_new();
     http_headers_set(headers, "Content-Type", "text/html");
+
+    body_sz = c_asprintf(&body, "<h1>%d %s</h1><p>%s</p>",
+                         status, http_status_to_string(status), error);
 
     if (http_server_conn_reply_data(conn, request, status, headers,
                                     body, (size_t)body_sz) == -1) {
