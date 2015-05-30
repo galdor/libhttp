@@ -517,6 +517,9 @@ http_uri_fragment_decode(const char *data, size_t sz) {
             len -= 3;
 
             start = ptr;
+        } else {
+            c_set_error("invalid query/fragment character");
+            goto error;
         }
     }
 
