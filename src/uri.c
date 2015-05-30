@@ -34,6 +34,12 @@ static char *http_uri_path_decode(const char *, size_t);
 static char *http_uri_query_decode(const char *, size_t);
 static char *http_uri_fragment_decode(const char *, size_t);
 
+static void http_uri_pct_encode(char, char *);
+static void http_uri_encode(const char *, struct c_buffer *);
+static void http_uri_path_encode(const char *, struct c_buffer *);
+static void http_uri_query_encode(const char *, struct c_buffer *);
+static void http_uri_fragment_encode(const char *, struct c_buffer *);
+
 struct http_uri *
 http_uri_new(void) {
     struct http_uri *uri;
@@ -211,6 +217,62 @@ error:
     return NULL;
 }
 
+void
+http_uri_to_buffer(const struct http_uri *uri, struct c_buffer *buf) {
+    if (uri->scheme)
+        c_buffer_add_printf(buf, "%s:", uri->scheme);
+
+    if (uri->host) {
+        c_buffer_add_string(buf, "//");
+
+        if (uri->user) {
+            http_uri_encode(uri->user, buf);
+
+            if (uri->password) {
+                c_buffer_add_string(buf, ":");
+                http_uri_encode(uri->password, buf);
+            }
+
+            c_buffer_add_string(buf, "@");
+        }
+
+        http_uri_encode(uri->host, buf);
+
+        if (uri->port)
+            c_buffer_add_printf(buf, ":%u", uri->port_number);
+    }
+
+    if (uri->path) {
+        http_uri_path_encode(uri->path, buf);
+    } else {
+        c_buffer_add_string(buf, "/");
+    }
+
+    if (uri->query) {
+        c_buffer_add_string(buf, "?");
+        http_uri_query_encode(uri->query, buf);
+    }
+
+    if (uri->fragment) {
+        c_buffer_add_string(buf, "#");
+        http_uri_fragment_encode(uri->fragment, buf);
+    }
+}
+
+char *
+http_uri_to_string(const struct http_uri *uri) {
+    struct c_buffer *buf;
+    char *string;
+
+    buf = c_buffer_new();
+    http_uri_to_buffer(uri, buf);
+
+    string = c_buffer_extract_string(buf, NULL);
+    c_buffer_delete(buf);
+
+    return string;
+}
+
 const char *
 http_uri_scheme(const struct http_uri *uri) {
     return uri->scheme;
@@ -254,12 +316,6 @@ http_uri_query(const struct http_uri *uri) {
 const char *
 http_uri_fragment(const struct http_uri *uri) {
     return uri->fragment;
-}
-
-static char *
-http_uri_component_decode(const char *data, size_t sz) {
-    /* TODO */
-    return NULL;
 }
 
 static bool
@@ -530,4 +586,132 @@ http_uri_fragment_decode(const char *data, size_t sz) {
 error:
     c_buffer_delete(buf);
     return NULL;
+}
+
+static void
+http_uri_pct_encode(char c, char *ptr) {
+    static const char *hex_digits = "0123456789abcdef";
+
+    *ptr++ = '%';
+    *ptr++ = hex_digits[(unsigned char)c >> 4];
+    *ptr++ = hex_digits[(unsigned char)c & 0xf];
+}
+
+static void
+http_uri_encode(const char *string, struct c_buffer *buf) {
+    const char *iptr;
+    char *optr;
+    size_t len;
+
+    iptr = string;
+    len = 0;
+    while (*iptr != '\0') {
+        if (http_uri_is_unreserved(*iptr)
+         || http_uri_is_sub_delims(*iptr)) {
+            len += 1;
+        } else {
+            len += 3;
+        }
+
+        iptr++;
+    }
+
+    optr = c_buffer_reserve(buf, len);
+
+    iptr = string;
+    while (*iptr != '\0') {
+        if (http_uri_is_unreserved(*iptr)
+         || http_uri_is_sub_delims(*iptr)) {
+            *optr++ = *iptr++;
+        } else {
+            http_uri_pct_encode(*iptr, optr);
+            iptr += 1;
+            optr += 3;
+        }
+    }
+
+    c_buffer_increase_length(buf, len);
+}
+
+static void
+http_uri_path_encode(const char *string, struct c_buffer *buf) {
+    const char *iptr;
+    char *optr;
+    size_t len;
+
+    iptr = string;
+    len = 0;
+    while (*iptr != '\0') {
+        if (http_uri_is_unreserved(*iptr)
+         || http_uri_is_sub_delims(*iptr)
+         || *iptr == '/') {
+            len += 1;
+        } else {
+            len += 3;
+        }
+
+        iptr++;
+    }
+
+    optr = c_buffer_reserve(buf, len);
+
+    iptr = string;
+    while (*iptr != '\0') {
+        if (http_uri_is_unreserved(*iptr)
+         || http_uri_is_sub_delims(*iptr)
+         || *iptr == '/') {
+            *optr++ = *iptr++;
+        } else {
+            http_uri_pct_encode(*iptr, optr);
+            iptr += 1;
+            optr += 3;
+        }
+    }
+
+    c_buffer_increase_length(buf, len);
+}
+
+static void
+http_uri_query_encode(const char *string, struct c_buffer *buf) {
+    return http_uri_fragment_encode(string, buf);
+}
+
+static void
+http_uri_fragment_encode(const char *string, struct c_buffer *buf) {
+    const char *iptr;
+    char *optr;
+    size_t len;
+
+    iptr = string;
+    len = 0;
+    while (*iptr != '\0') {
+        if (http_uri_is_unreserved(*iptr)
+         || http_uri_is_sub_delims(*iptr)
+         || *iptr == ':' || *iptr == '@' || *iptr == '/' || *iptr == '?') {
+            len += 1;
+        } else {
+            len += 3;
+        }
+
+        iptr++;
+    }
+
+    optr = c_buffer_reserve(buf, len);
+
+    iptr = string;
+    while (*iptr != '\0') {
+        if (http_uri_is_unreserved(*iptr)
+         || http_uri_is_sub_delims(*iptr)
+         || *iptr == ':' || *iptr == '@' || *iptr == '/' || *iptr == '?') {
+            *optr++ = *iptr++;
+        } else {
+            http_uri_pct_encode(*iptr, optr);
+            iptr += 1;
+            optr += 3;
+
+            iptr++;
+        }
+    }
+
+    c_buffer_increase_length(buf, len);
 }

@@ -27,6 +27,7 @@ main(int argc, char **argv) {
     struct c_command_line *cmdline;
     const char *uri_string;
     struct http_uri *uri;
+    char *result;
 
     cmdline = c_command_line_new();
 
@@ -59,6 +60,10 @@ main(int argc, char **argv) {
         printf("- %-12s  '%s'\n", "query", http_uri_query(uri));
     if (http_uri_fragment(uri))
         printf("- %-12s  '%s'\n", "fragment", http_uri_fragment(uri));
+
+    result = http_uri_to_string(uri);
+    printf("\n%s\n", result);
+    c_free(result);
 
     http_uri_delete(uri);
 
