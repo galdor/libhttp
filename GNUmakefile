@@ -38,13 +38,10 @@ endif
 
 # Target: libhttp
 libhttp_LIB= libhttp.a
-libhttp_RLS= $(wildcard src/*.rl)
-libhttp_RLC= $(subst .rl,.c,$(libhttp_RLS))
-libhttp_RLO= $(subst .c,.o,$(libhttp_RLC))
 libhttp_SRC= $(wildcard src/*.c)
 libhttp_INC= $(wildcard src/*.h)
 libhttp_PUBINC= src/http.h
-libhttp_OBJ= $(subst .c,.o,$(libhttp_SRC)) $(libhttp_RLO)
+libhttp_OBJ= $(subst .c,.o,$(libhttp_SRC))
 
 $(libhttp_LIB): CFLAGS+=
 
@@ -124,4 +121,3 @@ tags:
 	ctags -o .tags -a $(wildcard src/*.[hc])
 
 .PHONY: all lib tests doc clean coverage install uninstall tags
-.SECONDARY: $(libhttp_RLC)
