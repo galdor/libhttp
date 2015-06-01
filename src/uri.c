@@ -273,6 +273,33 @@ http_uri_to_string(const struct http_uri *uri) {
     return string;
 }
 
+struct http_uri *
+http_uri_clone(const struct http_uri *uri) {
+    struct http_uri *new_uri;
+
+    new_uri = http_uri_new();
+
+    if (uri->scheme)
+        new_uri->scheme = c_strdup(uri->scheme);
+    if (uri->user)
+        new_uri->user = c_strdup(uri->user);
+    if (uri->password)
+        new_uri->password = c_strdup(uri->password);
+    if (uri->host)
+        new_uri->host = c_strdup(uri->host);
+    if (uri->port)
+        new_uri->port = c_strdup(uri->port);
+    new_uri->port_number = uri->port_number;
+    if (uri->path)
+        new_uri->path = c_strdup(uri->path);
+    if (uri->query)
+        new_uri->query = c_strdup(uri->query);
+    if (uri->fragment)
+        new_uri->fragment = c_strdup(uri->fragment);
+
+    return new_uri;
+}
+
 const char *
 http_uri_scheme(const struct http_uri *uri) {
     return uri->scheme;

@@ -23,6 +23,8 @@
 struct httpex {
     struct io_base *base;
     struct http_client *client;
+    struct c_ptr_vector *uris;
+    size_t nb_responses;
     bool do_exit;
 };
 
@@ -33,6 +35,8 @@ static void httpex_on_signal(int, void *);
 
 static void httpex_on_client_event(struct http_client *,
                                    enum http_client_event, void *, void *);
+static int httpex_on_client_response(struct http_client *,
+                                     struct http_response *, void *);
 
 static struct httpex httpex;
 
@@ -52,6 +56,8 @@ main(int argc, char **argv) {
 
     c_command_line_add_argument(cmdline, "the host to connect to", "host");
     c_command_line_add_argument(cmdline, "the port to connect on", "port");
+    c_command_line_add_trailing_arguments(cmdline, "the list of uri targets",
+                                          "uri");
 
     if (c_command_line_parse(cmdline, argc, argv) == -1)
         httpex_die("%s", c_get_error());
@@ -61,6 +67,19 @@ main(int argc, char **argv) {
     port_string = c_command_line_argument_value(cmdline, 1);
     if (c_parse_u16(port_string, &port, NULL) == -1)
         httpex_die("invalid port number: %s", c_get_error());
+
+    httpex.uris = c_ptr_vector_new();
+    for (size_t i = 0; i < c_command_line_nb_trailing_arguments(cmdline); i++) {
+        struct http_uri *uri;
+        const char *string;
+
+        string = c_command_line_trailing_argument_value(cmdline, i);
+        uri = http_uri_parse(string);
+        if (!uri)
+            httpex_die("invalid uri: %s", c_get_error());
+
+        c_ptr_vector_append(httpex.uris, uri);
+    }
 
     use_ssl = c_command_line_is_option_set(cmdline, "ssl");
     if (use_ssl)
@@ -99,6 +118,10 @@ main(int argc, char **argv) {
         if (io_base_read_events(httpex.base) == -1)
             httpex_die("cannot read events: %s", c_get_error());
     }
+
+    for (size_t i = 0; i < c_ptr_vector_length(httpex.uris); i++)
+        http_uri_delete(c_ptr_vector_entry(httpex.uris, i));
+    c_ptr_vector_delete(httpex.uris);
 
     http_client_delete(httpex.client);
     io_base_delete(httpex.base);
@@ -151,6 +174,17 @@ httpex_on_client_event(struct http_client *client,
         break;
 
     case HTTP_CLIENT_EVENT_CONN_ESTABLISHED:
+        for (size_t i = 0; i < c_ptr_vector_length(httpex.uris); i++) {
+            struct http_uri *uri;
+
+            uri = c_ptr_vector_entry(httpex.uris, i);
+
+            if (http_client_request_empty(client, HTTP_GET, http_uri_clone(uri),
+                                          NULL, httpex_on_client_response,
+                                          NULL) == -1) {
+                httpex_die("cannot send request: %s", c_get_error());
+            }
+        }
         break;
 
     case HTTP_CLIENT_EVENT_CONN_FAILED:
@@ -165,4 +199,30 @@ httpex_on_client_event(struct http_client *client,
         httpex.do_exit = true;
         break;
     }
+}
+
+static int
+httpex_on_client_response(struct http_client *client,
+                          struct http_response *response, void *arg) {
+    const struct http_request *request;
+    enum http_method method;
+    enum http_status status;
+    char *uri_string;
+
+    request = http_response_request(response);
+    method = http_request_method(request);
+    uri_string = http_uri_to_string(http_request_target_uri(request));
+
+    status = http_response_status(response);
+    printf("%s %s\n  %d %s\n",
+           http_method_to_string(method), uri_string,
+           status, http_status_to_string(status));
+
+    c_free(uri_string);
+
+    httpex.nb_responses++;
+    if (httpex.nb_responses == c_ptr_vector_length(httpex.uris))
+        http_client_disconnect(client);
+
+    return 0;
 }

@@ -59,14 +59,10 @@ struct http_uri {
 #define HTTP_METHOD_MAX_LENGTH 7 /* OPTIONS */
 
 int http_method_parse(const char *, size_t, enum http_method *);
-const char *http_method_to_string(enum http_method);
 
 #define HTTP_VERSION_MAX_LENGTH 8 /* HTTP/1.1 */
 
 int http_version_parse(const char *, size_t, enum http_version *);
-const char *http_version_to_string(enum http_version);
-
-const char *http_status_to_string(enum http_status);
 
 #define HTTP_REASON_MAX_LENGTH 256
 
@@ -115,6 +111,10 @@ struct http_request {
     size_t content_length;
 
     uint32_t connection_options; /* enum http_connection_option */
+
+    /* When the request was generated */
+    http_client_response_cb response_cb;
+    void *response_cb_arg;
 };
 
 struct http_request *http_request_new(void);
@@ -123,8 +123,18 @@ void http_request_delete(struct http_request *);
 int http_request_parse(const char *, size_t, struct http_request **,
                        size_t *, enum http_status *);
 
+void http_request_finalize(struct http_request *, struct http_client *);
+void http_request_to_buffer(const struct http_request *, struct c_buffer *);
+
 void http_request_add_header(struct http_request *, const char *, const char *);
 void http_request_add_header_nocopy(struct http_request *, char *, char *);
+void http_request_set_header(struct http_request *, const char *,
+                             const char *);
+void http_request_set_header_vprintf(struct http_request *, const char *,
+                                     const char *, va_list);
+void http_request_set_header_printf(struct http_request *, const char *,
+                                    const char *, ...)
+    __attribute__ ((format(printf, 3, 4)));
 
 bool http_request_can_have_body(const struct http_request *);
 bool http_request_close_connection(const struct http_request *);
@@ -166,7 +176,8 @@ void http_response_set_header(struct http_response *, const char *,
 void http_response_set_header_vprintf(struct http_response *, const char *,
                                       const char *, va_list);
 void http_response_set_header_printf(struct http_response *, const char *,
-                                     const char *, ...);
+                                     const char *, ...)
+    __attribute__ ((format(printf, 3, 4)));
 
 bool http_response_can_have_body(const struct http_response *);
 
@@ -187,6 +198,11 @@ void http_client_trace(struct http_client *, const char *, ...)
     __attribute__ ((format(printf, 2, 3)));
 void http_client_error(struct http_client *, const char *, ...)
     __attribute__ ((format(printf, 2, 3)));
+
+int http_client_write_request(struct http_client *,
+                              const struct http_request *);
+int http_client_send_request(struct http_client *, struct http_request *,
+                             http_client_response_cb, void *);
 
 /* Router */
 struct http_route {

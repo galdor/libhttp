@@ -190,6 +190,8 @@ httpex_on_request_number_get(struct http_server_conn *conn,
                              struct http_request *request, void *arg) {
     const char *string;
     int64_t number;
+    char *body;
+    int body_sz;
 
     string = http_request_path_segment(request, 1);
 
@@ -200,7 +202,9 @@ httpex_on_request_number_get(struct http_server_conn *conn,
         return -1;
     }
 
-    http_server_conn_reply_printf(conn, request, HTTP_200_OK, NULL,
-                                  "%"PRIi64"\n", number);
+    body_sz = c_asprintf(&body, "%"PRIi64"\n", number);
+
+    http_server_conn_reply_data_nocopy(conn, request, HTTP_200_OK, NULL,
+                                       body, (size_t)body_sz);
     return 0;
 }

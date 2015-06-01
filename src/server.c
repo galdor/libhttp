@@ -196,6 +196,16 @@ http_server_conn_reply_data(struct http_server_conn *conn,
                             enum http_status status,
                             struct http_headers *headers,
                             const void *data, size_t sz) {
+    return http_server_conn_reply_data_nocopy(conn, request, status, headers,
+                                              c_memdup(data, sz), sz);
+}
+
+int
+http_server_conn_reply_data_nocopy(struct http_server_conn *conn,
+                                   struct http_request *request,
+                                   enum http_status status,
+                                   struct http_headers *headers,
+                                   void *data, size_t sz) {
     struct http_response *response;
 
     response = http_response_new();
@@ -207,7 +217,7 @@ http_server_conn_reply_data(struct http_server_conn *conn,
     }
 
     response->body_sz = sz;
-    response->body = c_memdup(data, sz);
+    response->body = data;
 
     return http_server_conn_send_response(conn, request, response);
 }
@@ -232,24 +242,6 @@ http_server_conn_reply_string(struct http_server_conn *conn,
     response->body = c_strndup(string, response->body_sz);
 
     return http_server_conn_send_response(conn, request, response);
-}
-
-int
-http_server_conn_reply_printf(struct http_server_conn *conn,
-                              struct http_request *request,
-                              enum http_status status,
-                              struct http_headers *headers,
-                              const char *fmt, ...) {
-    va_list ap;
-    char *body;
-    int body_sz;
-
-    va_start(ap, fmt);
-    body_sz = c_vasprintf(&body, fmt, ap);
-    va_end(ap);
-
-    return http_server_conn_reply_data(conn, request, status, headers,
-                                       body, (size_t)body_sz);
 }
 
 static void

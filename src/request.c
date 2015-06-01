@@ -26,6 +26,7 @@ http_request_new(void) {
 
     request = c_malloc0(sizeof(struct http_request));
 
+    request->version = HTTP_1_1;
     request->headers = http_headers_new();
 
     return request;
@@ -193,6 +194,16 @@ end:
     return 1;
 }
 
+enum http_method
+http_request_method(const struct http_request *request) {
+    return request->method;
+}
+
+struct http_uri *
+http_request_target_uri(const struct http_request *request) {
+    return request->target_uri;
+}
+
 void
 http_request_add_header(struct http_request *request,
                         const char *name, const char *value) {
@@ -203,6 +214,30 @@ void
 http_request_add_header_nocopy(struct http_request *request,
                                char *name, char *value) {
     http_headers_add_nocopy(request->headers, name, value);
+}
+
+void
+http_request_set_header(struct http_request *request, const char *name,
+                        const char *value) {
+    http_headers_set(request->headers, name, value);
+}
+
+void
+http_request_set_header_vprintf(struct http_request *request,
+                                const char *name,
+                                const char *fmt, va_list ap) {
+    http_headers_set_vprintf(request->headers, name, fmt, ap);
+}
+
+void
+http_request_set_header_printf(struct http_request *request,
+                               const char *name,
+                               const char *fmt, ...) {
+    va_list ap;
+
+    va_start(ap, fmt);
+    http_headers_set_vprintf(request->headers, name, fmt, ap);
+    va_end(ap);
 }
 
 size_t
@@ -350,4 +385,52 @@ http_request_preprocess_headers(struct http_request *request,
 #undef HTTP_FAIL
 
     return 0;
+}
+
+void
+http_request_finalize(struct http_request *request,
+                      struct http_client *client) {
+    struct http_uri *uri;
+    const char *host;
+    uint16_t port;
+
+    uri = request->target_uri;
+
+    /* Host */
+    host = uri->host ? uri->host : http_client_host(client);
+    port = uri->port ? uri->port_number : http_client_port(client);
+
+    http_request_set_header_printf(request, "Host", "%s:%u", host, port);
+}
+
+void
+http_request_to_buffer(const struct http_request *request,
+                       struct c_buffer *buf) {
+    const char *method_string, *version_string;
+
+    /* Status line */
+    method_string = http_method_to_string(request->method);
+    assert(method_string);
+    c_buffer_add_printf(buf, "%s ", method_string);
+
+    http_uri_to_buffer(request->target_uri, buf);
+
+    version_string = http_version_to_string(request->version);
+    assert(version_string);
+    c_buffer_add_printf(buf, " %s\r\n", version_string);
+
+    /* Headers */
+    for (size_t i = 0; i < http_headers_nb_headers(request->headers); i++) {
+        const char *name, *value;
+
+        name = http_headers_nth_header(request->headers, i, &value);
+
+        c_buffer_add_printf(buf, "%s: %s\r\n", name, value);
+    }
+
+    c_buffer_add_string(buf, "\r\n");
+
+    /* Body */
+    if (request->body)
+        c_buffer_add(buf, request->body, request->body_sz);
 }

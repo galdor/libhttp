@@ -57,6 +57,16 @@ http_client_delete(struct http_client *client) {
     c_free0(client, sizeof(struct http_client));
 }
 
+const char *
+http_client_host(const struct http_client *client) {
+    return io_tcp_client_host(client->tcp_client);
+}
+
+uint16_t
+http_client_port(const struct http_client *client) {
+    return io_tcp_client_port(client->tcp_client);
+}
+
 void
 http_client_set_event_cb(struct http_client *client,
                          http_client_event_cb cb, void *cb_arg) {
@@ -108,6 +118,102 @@ http_client_error(struct http_client *client, const char *fmt, ...) {
     http_client_signal_event(client, HTTP_CLIENT_EVENT_ERROR, buf);
 }
 
+int
+http_client_write_request(struct http_client *client,
+                          const struct http_request *request) {
+
+    struct c_buffer *wbuf;
+
+    wbuf = io_tcp_client_wbuf(client->tcp_client);
+    http_request_to_buffer(request, wbuf);
+
+    return io_tcp_client_signal_data_written(client->tcp_client);
+}
+
+int
+http_client_send_request(struct http_client *client,
+                         struct http_request *request,
+                         http_client_response_cb cb, void *cb_arg) {
+    assert(!request->response_cb);
+
+    http_request_finalize(request, client);
+
+    request->response_cb = cb;
+    request->response_cb_arg = cb_arg;
+
+    if (http_client_write_request(client, request) == -1) {
+        http_request_delete(request);
+
+        http_client_error(client, "%s", c_get_error());
+        http_client_disconnect(client);
+        return -1;
+    }
+
+    c_queue_push(client->requests, request);
+    return 0;
+}
+
+int
+http_client_request_empty(struct http_client *client, enum http_method method,
+                          struct http_uri *uri, struct http_headers *headers,
+                          http_client_response_cb cb, void *cb_arg) {
+    struct http_request *request;
+
+    request = http_request_new();
+
+    request->method = method;
+    request->target_uri = uri;
+
+    if (headers) {
+        http_headers_merge_nocopy(request->headers, headers);
+        http_headers_delete(headers);
+    }
+
+    return http_client_send_request(client, request, cb, cb_arg);
+}
+
+int
+http_client_request_data(struct http_client *client, enum http_method method,
+                         struct http_uri *uri, struct http_headers *headers,
+                         const void *data, size_t sz,
+                          http_client_response_cb cb, void *cb_arg) {
+    return http_client_request_data_nocopy(client, method, uri, headers,
+                                           c_memdup(data, sz), sz,
+                                           cb, cb_arg);
+}
+
+int
+http_client_request_data_nocopy(struct http_client *client,
+                                enum http_method method, struct http_uri *uri,
+                                struct http_headers *headers,
+                                void *data, size_t sz,
+                                http_client_response_cb cb, void *cb_arg) {
+    struct http_request *request;
+
+    request = http_request_new();
+    request->method = method;
+    request->target_uri = uri;
+
+    if (headers) {
+        http_headers_merge_nocopy(request->headers, headers);
+        http_headers_delete(headers);
+    }
+
+    request->body = data;
+    request->body_sz = sz;
+
+    return http_client_send_request(client, request, cb, cb_arg);
+}
+
+int
+http_client_request_string(struct http_client *client, enum http_method method,
+                           struct http_uri *uri, struct http_headers *headers,
+                           const char *string,
+                           http_client_response_cb cb, void *cb_arg) {
+    return http_client_request_data(client, method, uri, headers,
+                                    string, strlen(string), cb, cb_arg);
+}
+
 static void
 http_client_on_tcp_event(struct io_tcp_client *tcp_client,
                          enum io_tcp_client_event event, void *arg) {
@@ -119,10 +225,6 @@ http_client_on_tcp_event(struct io_tcp_client *tcp_client,
     case IO_TCP_CLIENT_EVENT_CONN_ESTABLISHED:
         http_client_signal_event(client, HTTP_CLIENT_EVENT_CONN_ESTABLISHED,
                                  NULL);
-
-        /* XXX debug */
-        const char *data = "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n";
-        io_tcp_client_write(client->tcp_client, data, strlen(data));
         break;
 
     case IO_TCP_CLIENT_EVENT_CONN_FAILED:
@@ -180,8 +282,7 @@ http_client_on_response(struct http_client *client,
                         struct http_response *response) {
     struct http_request *request;
 
-    /* XXX debug */
-#if 1
+#if 0
     http_client_trace(client, "response");
     http_client_trace(client, "  version: %s",
                       http_version_to_string(response->version));
@@ -199,14 +300,28 @@ http_client_on_response(struct http_client *client,
 
     request = c_queue_pop(client->requests);
     if (!request) {
-        http_client_error(client, "response received without request");
-        http_response_delete(response);
-        http_client_disconnect(client);
-        return;
+        c_set_error("response received without request");
+        goto error;
     }
 
-    /* TODO callback */
+    response->request = request;
+
+    if (request->response_cb) {
+        if (request->response_cb(client, response,
+                                 request->response_cb_arg) == -1) {
+            goto error;
+        }
+    }
 
     http_request_delete(request);
     http_response_delete(response);
+    return;
+
+error:
+    http_client_error(client, "%s", c_get_error());
+
+    http_request_delete(request);
+    http_response_delete(response);
+
+    http_client_disconnect(client);
 }

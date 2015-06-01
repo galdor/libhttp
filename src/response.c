@@ -223,7 +223,18 @@ http_response_to_buffer(const struct http_response *response,
     c_buffer_add_string(buf, "\r\n");
 
     /* Body */
-    c_buffer_add(buf, response->body, response->body_sz);
+    if (response->body)
+        c_buffer_add(buf, response->body, response->body_sz);
+}
+
+struct http_request *
+http_response_request(const struct http_response *response) {
+    return response->request;
+}
+
+enum http_status
+http_response_status(const struct http_response *response) {
+    return response->status;
 }
 
 void
