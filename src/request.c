@@ -78,7 +78,7 @@ http_request_parse(const char *data, size_t sz,
     request = http_request_new();
 
     /* Method */
-    toklen = strcspn(ptr, " ");
+    toklen = http_memcspn(ptr, len, " ");
     if (toklen == len) {
         if (len > HTTP_METHOD_MAX_LENGTH)
             HTTP_FAIL(HTTP_501_NOT_IMPLEMENTED, "unknown method");
@@ -92,7 +92,7 @@ http_request_parse(const char *data, size_t sz,
     len -= toklen + 1;
 
     /* Target */
-    toklen = strcspn(ptr, " ");
+    toklen = http_memcspn(ptr, len, " ");
     if (toklen == len) {
         if (len > HTTP_REQUEST_TARGET_MAX_LENGTH)
             HTTP_FAIL(HTTP_414_URI_TOO_LONG, "request target too long");
@@ -127,7 +127,7 @@ http_request_parse(const char *data, size_t sz,
     len -= toklen + 1;
 
     /* Version */
-    toklen = strcspn(ptr, "\r");
+    toklen = http_memcspn(ptr, len, "\r");
     if (toklen == len) {
         if (len > HTTP_VERSION_MAX_LENGTH)
             HTTP_FAIL(HTTP_400_BAD_REQUEST, "invalid version");
