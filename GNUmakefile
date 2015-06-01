@@ -78,7 +78,7 @@ examples: lib $(examples_BIN)
 
 doc: $(doc_HTML)
 
-$(libhttp_LIB): $(libhttp_OBJ)
+$(libhttp_LIB): $(libhttp_OBJ) $(libhttp_INC)
 	$(AR) cr $@ $(libhttp_OBJ)
 
 $(tests_OBJ): $(libhttp_LIB) $(libhttp_INC)
