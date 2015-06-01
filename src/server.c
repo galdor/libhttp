@@ -22,7 +22,7 @@
  * ------------------------------------------------------------------------ */
 static void http_server_conn_on_data(struct http_server_conn *);
 static void http_server_conn_on_request(struct http_server_conn *,
-                                        struct http_request *);
+                                        struct http_request *, bool *);
 
 struct http_server_conn *
 http_server_conn_new(struct http_server *server,
@@ -168,7 +168,6 @@ http_reply_error(struct http_request *request, enum http_status status,
         return -1;
     }
 
-    http_server_conn_disconnect(request->conn);
     return 0;
 }
 
@@ -244,6 +243,7 @@ http_server_conn_on_data(struct http_server_conn *conn) {
     while (c_buffer_length(rbuf) > 0) {
         struct http_request *request;
         enum http_status status;
+        bool disconnected;
         size_t sz;
         int ret;
 
@@ -262,7 +262,13 @@ http_server_conn_on_data(struct http_server_conn *conn) {
             request = http_request_new();
             request->conn = conn;
 
-            http_reply_error(request, status, NULL, "%s", c_get_error());
+            if (http_reply_error(request, status, NULL,
+                                 "%s", c_get_error()) == -1) {
+                http_server_error(server, "cannot send error response: %s",
+                                  c_get_error());
+            }
+
+            http_server_conn_disconnect(conn);
             return;
         } else if (ret == 0) {
             return;
@@ -270,41 +276,61 @@ http_server_conn_on_data(struct http_server_conn *conn) {
 
         c_buffer_skip(rbuf, sz);
 
-        http_server_conn_on_request(conn, request);
+        http_server_conn_on_request(conn, request, &disconnected);
+        if (disconnected)
+            return;
     }
 }
 
 static void
 http_server_conn_on_request(struct http_server_conn *conn,
-                            struct http_request *request) {
+                            struct http_request *request,
+                            bool *pdisconnected) {
     const struct http_route *route;
     enum http_status status;
     bool do_close;
 
     request->conn = conn;
 
-    c_queue_push(conn->requests, request);
-
     do_close = http_request_close_connection(request);
+
+    c_queue_push(conn->requests, request);
 
     route = http_router_find_route(conn->server->router,
                                    request->method, request->target_path,
                                    &status);
     if (!route) {
-        http_reply_error(request, status, NULL, NULL);
+        if (http_reply_error(request, status, NULL, NULL) == -1) {
+            http_server_error(conn->server, "cannot send error response: %s",
+                              c_get_error());
+            goto error;
+        }
+
+        *pdisconnected = false;
         return;
     }
 
     if (route->cb(request, route->cb_arg) == -1) {
-        http_server_error(conn->server, "connection error: %s", c_get_error());
-        http_server_conn_disconnect(conn);
-        return;
+        http_server_error(conn->server, "route callback error: %s",
+                          c_get_error());
+        goto error;
     }
 
     if (do_close) {
         http_server_conn_disconnect(conn);
+        *pdisconnected = true;
         return;
     }
+
+    *pdisconnected = false;
+    return;
+
+error:
+    c_queue_pop(conn->requests);
+    http_request_delete(request);
+
+    http_server_conn_disconnect(conn);
+    *pdisconnected = true;
 }
 
 /* ---------------------------------------------------------------------------
@@ -503,8 +529,8 @@ http_server_default_error_cb(struct http_request *request,
     body_sz = c_asprintf(&body, "<h1>%d %s</h1><p>%s</p>",
                          status, http_status_to_string(status), error);
 
-    if (http_reply_data(request, status, headers,
-                        body, (size_t)body_sz) == -1) {
+    if (http_reply_data_nocopy(request, status, headers,
+                               body, (size_t)body_sz) == -1) {
         c_free(body);
         return -1;
     }

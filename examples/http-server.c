@@ -193,7 +193,7 @@ httpex_on_request_number_get(struct http_request *request, void *arg) {
     if (c_parse_i64(string, &number, NULL) == -1) {
         http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL,
                          "cannot parse number: %s", c_get_error());
-        return -1;
+        return 0;
     }
 
     body_sz = c_asprintf(&body, "%"PRIi64"\n", number);
