@@ -266,6 +266,13 @@ http_request_path_segment(const struct http_request *request, size_t idx) {
     return http_path_segment(request->target_path, idx);
 }
 
+void *
+http_request_body(const struct http_request *request, size_t *psz) {
+    if (psz)
+        *psz = request->body_sz;
+    return request->body;
+}
+
 bool
 http_request_can_have_body(const struct http_request *request) {
     return request->method == HTTP_POST

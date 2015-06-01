@@ -106,7 +106,9 @@ struct http_request {
     void *body;
     size_t body_sz;
 
-    /* When the request was parsed, not generated */
+    /* When the request was received and parsed */
+    struct http_server_conn *conn;
+
     bool has_content_length;
     size_t content_length;
 

@@ -166,6 +166,8 @@ const char *http_request_header(const struct http_request *, const char *);
 
 const char *http_request_path_segment(const struct http_request *, size_t);
 
+void *http_request_body(const struct http_request *, size_t *);
+
 /* Response */
 struct http_response;
 
@@ -228,8 +230,7 @@ int http_client_request_string(struct http_client *, enum http_method,
 struct http_router;
 struct http_server_conn;
 
-typedef int (*http_route_cb)(struct http_server_conn *,
-                             struct http_request *, void *);
+typedef int (*http_route_cb)(struct http_request *, void *);
 
 struct http_router *http_router_new(void);
 void http_router_delete(struct http_router *);
@@ -250,8 +251,7 @@ enum http_server_event {
 typedef void (*http_server_event_cb)(struct http_server *,
                                      enum http_server_event, void *,
                                      void *);
-typedef int (*http_server_error_cb)(struct http_server_conn *,
-                                    struct http_request *,
+typedef int (*http_server_error_cb)(struct http_request *,
                                     enum http_status, struct http_headers *,
                                     const char *, void *);
 
@@ -278,23 +278,17 @@ void http_server_stop(struct http_server *);
 /* Server connection */
 void http_server_conn_disconnect(struct http_server_conn *);
 
-int http_server_conn_reply_error(struct http_server_conn *,
-                                 struct http_request *, enum http_status,
-                                 struct http_headers *, const char *, ...)
-    __attribute__ ((format(printf, 5, 6)));
+int http_reply_error(struct http_request *, enum http_status,
+                     struct http_headers *, const char *, ...)
+    __attribute__ ((format(printf, 4, 5)));
 
-int http_server_conn_reply_empty(struct http_server_conn *,
-                                 struct http_request *, enum http_status,
-                                 struct http_headers *);
-int http_server_conn_reply_data(struct http_server_conn *,
-                                struct http_request *, enum http_status,
-                                struct http_headers *, const void *, size_t);
-int http_server_conn_reply_data_nocopy(struct http_server_conn *,
-                                       struct http_request *, enum http_status,
-                                       struct http_headers *,
-                                       void *, size_t);
-int http_server_conn_reply_string(struct http_server_conn *,
-                                  struct http_request *, enum http_status,
-                                  struct http_headers *, const char *);
+int http_reply_empty(struct http_request *, enum http_status,
+                     struct http_headers *);
+int http_reply_data(struct http_request *, enum http_status,
+                    struct http_headers *, const void *, size_t);
+int http_reply_data_nocopy(struct http_request *, enum http_status,
+                           struct http_headers *, void *, size_t);
+int http_reply_string(struct http_request *, enum http_status,
+                      struct http_headers *, const char *);
 
 #endif

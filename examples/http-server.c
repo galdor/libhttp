@@ -35,10 +35,8 @@ static void httpex_on_signal(int, void *);
 static void httpex_on_server_event(struct http_server *,
                                    enum http_server_event, void *,
                                    void *);
-static int httpex_on_request_root_get(struct http_server_conn *,
-                                      struct http_request *, void *);
-static int httpex_on_request_number_get(struct http_server_conn *,
-                                        struct http_request *, void *);
+static int httpex_on_request_root_get(struct http_request *, void *);
+static int httpex_on_request_number_get(struct http_request *, void *);
 
 static struct httpex httpex;
 
@@ -178,16 +176,13 @@ httpex_on_server_event(struct http_server *server,
 }
 
 static int
-httpex_on_request_root_get(struct http_server_conn *conn,
-                           struct http_request *request, void *arg) {
-    http_server_conn_reply_string(conn, request, HTTP_200_OK, NULL,
-                                  "hello world\n");
+httpex_on_request_root_get(struct http_request *request, void *arg) {
+    http_reply_string(request, HTTP_200_OK, NULL, "hello world\n");
     return 0;
 }
 
 static int
-httpex_on_request_number_get(struct http_server_conn *conn,
-                             struct http_request *request, void *arg) {
+httpex_on_request_number_get(struct http_request *request, void *arg) {
     const char *string;
     int64_t number;
     char *body;
@@ -196,15 +191,14 @@ httpex_on_request_number_get(struct http_server_conn *conn,
     string = http_request_path_segment(request, 1);
 
     if (c_parse_i64(string, &number, NULL) == -1) {
-        http_server_conn_reply_error(conn, request, HTTP_406_NOT_ACCEPTABLE,
-                                     NULL, "cannot parse number: %s",
-                                     c_get_error());
+        http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL,
+                         "cannot parse number: %s", c_get_error());
         return -1;
     }
 
     body_sz = c_asprintf(&body, "%"PRIi64"\n", number);
 
-    http_server_conn_reply_data_nocopy(conn, request, HTTP_200_OK, NULL,
-                                       body, (size_t)body_sz);
+    http_reply_data_nocopy(request, HTTP_200_OK, NULL,
+                           body, (size_t)body_sz);
     return 0;
 }
