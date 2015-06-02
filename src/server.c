@@ -84,12 +84,19 @@ int
 http_server_conn_send_response(struct http_server_conn *conn,
                                struct http_request *request,
                                struct http_response *response) {
+    struct http_server *server;
+
     assert(request->conn == conn);
     assert(!response->request);
+
+    server = conn->server;
 
     response->request = request;
 
     http_response_finalize(response);
+
+    if (server->response_cb)
+        server->response_cb(response, server->response_cb_arg);
 
     if (!request) {
         if (http_server_conn_write_response(conn, response) == -1)
@@ -287,35 +294,61 @@ http_server_conn_on_request(struct http_server_conn *conn,
                             struct http_request *request,
                             bool *pdisconnected) {
     const struct http_route *route;
+    struct http_server *server;
     enum http_status status;
     bool do_close;
+
+    server = conn->server;
 
     request->conn = conn;
 
     do_close = http_request_close_connection(request);
+    *pdisconnected = false;
 
     c_queue_push(conn->requests, request);
+
+    if (server->request_cb) {
+        if (server->request_cb(request, server->request_cb_arg) == -1) {
+            http_server_error(server, "request callback error: %s",
+                              c_get_error());
+
+            http_server_conn_disconnect(conn);
+            *pdisconnected = true;
+            return;
+        }
+
+        if (c_queue_peek(conn->requests) != request) {
+            /* A response was sent in the callback (yes, this is a hack) */
+            return;
+        }
+    }
 
     route = http_router_find_route(conn->server->router,
                                    request->method, request->target_path,
                                    &status);
     if (!route) {
         if (http_reply_error(request, status, NULL, NULL) == -1) {
-            http_server_error(conn->server, "cannot send error response: %s",
+            http_server_error(server, "cannot send error response: %s",
                               c_get_error());
-            goto error;
+
+            c_queue_pop(conn->requests);
+            http_request_delete(request);
+
+            http_server_conn_disconnect(conn);
+            *pdisconnected = true;
         }
 
-        *pdisconnected = false;
         return;
     }
 
     http_request_extract_named_parameters(request, route);
 
     if (route->cb(request, route->cb_arg) == -1) {
-        http_server_error(conn->server, "route callback error: %s",
-                          c_get_error());
-        goto error;
+        http_server_error(server, "route callback error: %s", c_get_error());
+
+        http_server_conn_disconnect(conn);
+        *pdisconnected = true;
+        return;
     }
 
     if (do_close) {
@@ -323,16 +356,6 @@ http_server_conn_on_request(struct http_server_conn *conn,
         *pdisconnected = true;
         return;
     }
-
-    *pdisconnected = false;
-    return;
-
-error:
-    c_queue_pop(conn->requests);
-    http_request_delete(request);
-
-    http_server_conn_disconnect(conn);
-    *pdisconnected = true;
 }
 
 /* ---------------------------------------------------------------------------
@@ -403,6 +426,20 @@ http_server_set_event_cb(struct http_server *server,
                          http_server_event_cb cb, void *cb_arg) {
     server->event_cb = cb;
     server->event_cb_arg = cb_arg;
+}
+
+void
+http_server_set_request_cb(struct http_server *server,
+                         http_server_request_cb cb, void *cb_arg) {
+    server->request_cb = cb;
+    server->request_cb_arg = cb_arg;
+}
+
+void
+http_server_set_response_cb(struct http_server *server,
+                         http_server_response_cb cb, void *cb_arg) {
+    server->response_cb = cb;
+    server->response_cb_arg = cb_arg;
 }
 
 void

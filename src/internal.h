@@ -274,6 +274,12 @@ struct http_server {
     http_server_event_cb event_cb;
     void *event_cb_arg;
 
+    http_server_request_cb request_cb;
+    void *request_cb_arg;
+
+    http_server_response_cb response_cb;
+    void *response_cb_arg;
+
     http_server_error_cb error_cb;
     void *error_cb_arg;
 };

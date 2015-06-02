@@ -262,6 +262,8 @@ enum http_server_event {
 typedef void (*http_server_event_cb)(struct http_server *,
                                      enum http_server_event, void *,
                                      void *);
+typedef int (*http_server_request_cb)(struct http_request *, void *);
+typedef void (*http_server_response_cb)(struct http_response *, void *);
 typedef int (*http_server_error_cb)(struct http_request *,
                                     enum http_status, struct http_headers *,
                                     const char *, void *);
@@ -278,6 +280,10 @@ http_server_nth_listening_address(const struct http_server *, size_t);
 
 void http_server_set_event_cb(struct http_server *,
                               http_server_event_cb, void *);
+void http_server_set_request_cb(struct http_server *,
+                                http_server_request_cb, void *);
+void http_server_set_response_cb(struct http_server *,
+                                 http_server_response_cb, void *);
 void http_server_set_error_cb(struct http_server *,
                               http_server_error_cb, void *);
 
