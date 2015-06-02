@@ -64,6 +64,11 @@ http_server_conn_delete(struct http_server_conn *conn) {
     c_free0(conn, sizeof(struct http_server_conn));
 }
 
+const struct io_address *
+http_server_conn_address(const struct http_server_conn *conn) {
+    return io_tcp_server_conn_address(conn->tcp_conn);
+}
+
 void
 http_server_conn_disconnect(struct http_server_conn *conn) {
     io_tcp_server_conn_disconnect(conn->tcp_conn);

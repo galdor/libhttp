@@ -220,6 +220,11 @@ http_request_target_uri(const struct http_request *request) {
     return request->target_uri;
 }
 
+struct http_server_conn *
+http_request_server_conn(const struct http_request *request) {
+    return request->conn;
+}
+
 void
 http_request_add_header(struct http_request *request,
                         const char *name, const char *value) {

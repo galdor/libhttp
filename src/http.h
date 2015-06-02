@@ -163,6 +163,8 @@ struct http_request;
 enum http_method http_request_method(const struct http_request *);
 struct http_uri *http_request_target_uri(const struct http_request *);
 
+struct http_server_conn *http_request_server_conn(const struct http_request *);
+
 size_t http_request_nb_headers(const struct http_request *);
 bool http_request_has_header(const struct http_request *, const char *);
 const char *http_request_nth_header(const struct http_request *, size_t,
@@ -293,6 +295,9 @@ int http_server_listen(struct http_server *, const char *, uint16_t);
 void http_server_stop(struct http_server *);
 
 /* Server connection */
+const struct io_address *
+http_server_conn_address(const struct http_server_conn *);
+
 void http_server_conn_disconnect(struct http_server_conn *);
 
 int http_reply_error(struct http_request *, enum http_status,
