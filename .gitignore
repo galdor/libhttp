@@ -10,6 +10,7 @@ session.vim
 /examples/http-server
 /examples/uri
 
+/tests/base64
 /tests/path
 /tests/router
 /tests/strings
