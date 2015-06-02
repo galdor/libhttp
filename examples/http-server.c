@@ -222,7 +222,6 @@ httpex_on_request_private_get(struct http_request *request, void *arg) {
 
         headers = http_headers_new();
         http_headers_set(headers, "WWW-Authenticate", "Basic realm=\"libhttp\"");
-        /* WWW-Authenticate */
 
         http_reply_error(request, HTTP_401_UNAUTHORIZED, headers,
                          "missing authentication data");
