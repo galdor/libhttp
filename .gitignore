@@ -12,4 +12,5 @@ session.vim
 
 /tests/path
 /tests/router
+/tests/strings
 /tests/uri
