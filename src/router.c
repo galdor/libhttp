@@ -87,8 +87,10 @@ http_route_matches_path(const struct http_route *route,
         segment = http_path_segment(path, i);
         rsegment = http_path_segment(rpath, i);
 
-        if (strcmp(rsegment, "?") == 0)
+        if (rsegment[0] == ':') {
+            /* Named parameter */
             continue;
+        }
 
         if (strcmp(rsegment, segment) != 0)
             return false;

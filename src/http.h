@@ -164,9 +164,10 @@ const char *http_request_nth_header(const struct http_request *, size_t,
                                     const char **);
 const char *http_request_header(const struct http_request *, const char *);
 
-const char *http_request_path_segment(const struct http_request *, size_t);
-
 void *http_request_body(const struct http_request *, size_t *);
+
+const char *http_request_named_parameter(const struct http_request *,
+                                         const char *);
 
 /* Response */
 struct http_response;

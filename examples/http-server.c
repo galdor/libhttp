@@ -88,7 +88,7 @@ main(int argc, char **argv) {
 
     http_router_bind(httpex.router, "/", HTTP_GET,
                      httpex_on_request_root_get, NULL);
-    http_router_bind(httpex.router, "/number/?", HTTP_GET,
+    http_router_bind(httpex.router, "/number/:n", HTTP_GET,
                      httpex_on_request_number_get, NULL);
 
     httpex.server = http_server_new(httpex.base, httpex.router);
@@ -188,7 +188,11 @@ httpex_on_request_number_get(struct http_request *request, void *arg) {
     char *body;
     int body_sz;
 
-    string = http_request_path_segment(request, 1);
+    string = http_request_named_parameter(request, "n");
+    if (!string) {
+        http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL, NULL);
+        return 0;
+    }
 
     if (c_parse_i64(string, &number, NULL) == -1) {
         http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL,

@@ -91,6 +91,8 @@ int http_headers_parse(const char *, size_t, struct http_headers **,
 #define HTTP_REQUEST_TARGET_MAX_LENGTH 2048
 #define HTTP_REQUEST_MAX_CONTENT_LENGTH (64 * 1024 * 1024)
 
+struct http_route;
+
 enum http_connection_option {
     HTTP_CONNECTION_KEEP_ALIVE = (1 << 0),
     HTTP_CONNECTION_CLOSE      = (1 << 1),
@@ -102,7 +104,6 @@ struct http_request {
 
     char *target;
     struct http_uri *target_uri;
-    struct http_path *target_path;
 
     struct http_headers *headers;
 
@@ -111,6 +112,9 @@ struct http_request {
 
     /* When the request was received and parsed */
     struct http_server_conn *conn;
+
+    struct http_path *target_path;
+    struct c_hash_table *named_parameters;
 
     bool has_content_length;
     size_t content_length;
@@ -128,7 +132,10 @@ void http_request_delete(struct http_request *);
 int http_request_parse(const char *, size_t, struct http_request **,
                        size_t *, enum http_status *);
 
+void http_request_extract_named_parameters(struct http_request *,
+                                           const struct http_route *);
 void http_request_finalize(struct http_request *, struct http_client *);
+
 void http_request_to_buffer(const struct http_request *, struct c_buffer *);
 
 void http_request_add_header(struct http_request *, const char *, const char *);

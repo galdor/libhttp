@@ -310,6 +310,8 @@ http_server_conn_on_request(struct http_server_conn *conn,
         return;
     }
 
+    http_request_extract_named_parameters(request, route);
+
     if (route->cb(request, route->cb_arg) == -1) {
         http_server_error(conn->server, "route callback error: %s",
                           c_get_error());

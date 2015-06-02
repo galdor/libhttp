@@ -45,6 +45,20 @@ http_request_delete(struct http_request *request) {
 
     c_free(request->body);
 
+    if (request->named_parameters) {
+        struct c_hash_table_iterator *it;
+        char *name, *value;
+
+        it = c_hash_table_iterate(request->named_parameters);
+        while (c_hash_table_iterator_next(it, (void **)&name,
+                                          (void **)&value) ==1) {
+            c_free(name);
+            c_free(value);
+        }
+        c_hash_table_iterator_delete(it);
+        c_hash_table_delete(request->named_parameters);
+    }
+
     c_free0(request, sizeof(struct http_request));
 }
 
@@ -261,16 +275,25 @@ http_request_header(const struct http_request *request, const char *name) {
     return http_headers_header(request->headers, name);
 }
 
-const char *
-http_request_path_segment(const struct http_request *request, size_t idx) {
-    return http_path_segment(request->target_path, idx);
-}
-
 void *
 http_request_body(const struct http_request *request, size_t *psz) {
     if (psz)
         *psz = request->body_sz;
     return request->body;
+}
+
+const char *
+http_request_named_parameter(const struct http_request *request,
+                             const char *name) {
+    const char *value;
+
+    if (!request->named_parameters)
+        return NULL;
+
+    if (c_hash_table_get(request->named_parameters, name, (void **)&value) == 0)
+        return NULL;
+
+    return value;
 }
 
 bool
@@ -392,6 +415,39 @@ http_request_preprocess_headers(struct http_request *request,
 #undef HTTP_FAIL
 
     return 0;
+}
+
+void
+http_request_extract_named_parameters(struct http_request *request,
+                                      const struct http_route *route) {
+    const struct http_path *path, *rpath;
+    size_t nb_segments;
+
+    assert(!request->named_parameters);
+    request->named_parameters = c_hash_table_new(c_hash_string, c_equal_string);
+
+    path = request->target_path;
+    rpath = route->path;
+
+    assert(http_path_nb_segments(path) == http_path_nb_segments(rpath));
+    nb_segments = http_path_nb_segments(path);
+
+    for (size_t i = 0; i < nb_segments; i++) {
+        const char *segment, *rsegment;
+
+        segment = http_path_segment(path, i);
+        rsegment = http_path_segment(rpath, i);
+
+        if (rsegment[0] == ':') {
+            const char *name, *value;
+
+            name = rsegment + 1;
+            value = segment;
+
+            c_hash_table_insert(request->named_parameters,
+                                c_strdup(name), c_strdup(value));
+        }
+    }
 }
 
 void
