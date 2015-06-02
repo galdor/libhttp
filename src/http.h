@@ -131,6 +131,11 @@ enum http_status {
 
 const char *http_status_to_string(enum http_status);
 
+/* Authentication */
+enum http_auth_scheme {
+    HTTP_AUTH_SCHEME_BASIC,
+};
+
 /* Headers */
 struct http_headers *http_headers_new(void);
 void http_headers_delete(struct http_headers *);
@@ -168,6 +173,11 @@ void *http_request_body(const struct http_request *, size_t *);
 
 const char *http_request_named_parameter(const struct http_request *,
                                          const char *);
+
+bool http_request_has_auth_data(const struct http_request *);
+enum http_auth_scheme http_request_auth_scheme(const struct http_request *);
+void http_request_basic_auth_data(const struct http_request *,
+                                  const char **, const char **);
 
 /* Response */
 struct http_response;

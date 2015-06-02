@@ -59,6 +59,8 @@ http_request_delete(struct http_request *request) {
         c_hash_table_delete(request->named_parameters);
     }
 
+    http_auth_delete(request->auth);
+
     c_free0(request, sizeof(struct http_request));
 }
 
@@ -297,6 +299,28 @@ http_request_named_parameter(const struct http_request *request,
 }
 
 bool
+http_request_has_auth_data(const struct http_request *request) {
+    return request->auth != NULL;
+}
+
+enum http_auth_scheme
+http_request_auth_scheme(const struct http_request *request) {
+    assert(request->auth);
+
+    return request->auth->scheme;
+}
+
+void
+http_request_basic_auth_data(const struct http_request *request,
+                             const char **puser, const char **ppassword) {
+    assert(request->auth);
+    assert(request->auth->scheme == HTTP_AUTH_SCHEME_BASIC);
+
+    *puser = request->auth->u.basic.user;
+    *ppassword = request->auth->u.basic.password;
+}
+
+bool
 http_request_can_have_body(const struct http_request *request) {
     return request->method == HTTP_POST
         || request->method == HTTP_PUT;
@@ -404,6 +428,14 @@ http_request_preprocess_headers(struct http_request *request,
             }
 
             http_string_vector_delete(tokens);
+
+        /* -- Authorization ----------------------------------------------- */
+        } else if (HTTP_HEADER_IS("Authorization")) {
+            request->auth = http_auth_parse_authorization(value);
+            if (!request->auth) {
+                HTTP_FAIL(HTTP_400_BAD_REQUEST,
+                          "cannot parse authorization header: %s", c_get_error());
+            }
         }
 
 #undef HTTP_HEADER_IS

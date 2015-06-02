@@ -78,6 +78,23 @@ int http_version_parse(const char *, size_t, enum http_version *);
 
 struct c_ptr_vector *http_list_parse(const char *);
 
+/* Authentication */
+struct http_auth {
+    enum http_auth_scheme scheme;
+
+    union {
+        struct {
+            char *user;
+            char *password;
+        } basic;
+    } u;
+};
+
+struct http_auth *http_auth_new(void);
+void http_auth_delete(struct http_auth *);
+
+struct http_auth *http_auth_parse_authorization(const char *);
+
 /* Header */
 #define HTTP_HEADER_NAME_MAX_LENGTH 256
 #define HTTP_HEADER_VALUE_MAX_LENGTH 2048
@@ -127,6 +144,8 @@ struct http_request {
     size_t content_length;
 
     uint32_t connection_options; /* enum http_connection_option */
+
+    struct http_auth *auth;
 
     /* When the request was generated */
     http_client_response_cb response_cb;

@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include <signal.h>
+#include <string.h>
 
 #include "http.h"
 
@@ -35,8 +36,10 @@ static void httpex_on_signal(int, void *);
 static void httpex_on_server_event(struct http_server *,
                                    enum http_server_event, void *,
                                    void *);
+
 static int httpex_on_request_root_get(struct http_request *, void *);
 static int httpex_on_request_number_get(struct http_request *, void *);
+static int httpex_on_request_private_get(struct http_request *, void *);
 
 static struct httpex httpex;
 
@@ -90,6 +93,8 @@ main(int argc, char **argv) {
                      httpex_on_request_root_get, NULL);
     http_router_bind(httpex.router, "/number/:n", HTTP_GET,
                      httpex_on_request_number_get, NULL);
+    http_router_bind(httpex.router, "/private", HTTP_GET,
+                     httpex_on_request_private_get, NULL);
 
     httpex.server = http_server_new(httpex.base, httpex.router);
     http_server_set_event_cb(httpex.server, httpex_on_server_event, NULL);
@@ -204,5 +209,34 @@ httpex_on_request_number_get(struct http_request *request, void *arg) {
 
     http_reply_data_nocopy(request, HTTP_200_OK, NULL,
                            body, (size_t)body_sz);
+    return 0;
+}
+
+static int
+httpex_on_request_private_get(struct http_request *request, void *arg) {
+    const char *user, *password;
+
+    if (!http_request_has_auth_data(request)
+     || http_request_auth_scheme(request) != HTTP_AUTH_SCHEME_BASIC) {
+        struct http_headers *headers;
+
+        headers = http_headers_new();
+        http_headers_set(headers, "WWW-Authenticate", "Basic realm=\"libhttp\"");
+        /* WWW-Authenticate */
+
+        http_reply_error(request, HTTP_401_UNAUTHORIZED, headers,
+                         "missing authentication data");
+        return 0;
+    }
+
+    http_request_basic_auth_data(request, &user, &password);
+
+    if (strcmp(user, "root") != 0 || strcmp(password, "root") != 0) {
+        http_reply_error(request, HTTP_401_UNAUTHORIZED, NULL,
+                         "invalid credentials");
+        return 0;
+    }
+
+    http_reply_string(request, HTTP_200_OK, NULL, "access authorized");
     return 0;
 }
