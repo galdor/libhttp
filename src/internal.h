@@ -298,6 +298,8 @@ struct http_server_conn {
 
     struct c_queue *requests;
     struct c_queue *responses;
+
+    void *private_data;
 };
 
 struct http_server_conn *http_server_conn_new(struct http_server *,

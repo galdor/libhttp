@@ -297,6 +297,9 @@ void http_server_stop(struct http_server *);
 const struct io_address *
 http_server_conn_address(const struct http_server_conn *);
 
+void http_server_conn_set_private_data(struct http_server_conn *, void *);
+void *http_server_conn_private_data(const struct http_server_conn *);
+
 void http_server_conn_disconnect(struct http_server_conn *);
 
 int http_reply_error(struct http_request *, enum http_status,

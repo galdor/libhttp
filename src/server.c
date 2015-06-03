@@ -70,6 +70,16 @@ http_server_conn_address(const struct http_server_conn *conn) {
 }
 
 void
+http_server_conn_set_private_data(struct http_server_conn *conn, void *data) {
+    conn->private_data = data;
+}
+
+void *
+http_server_conn_private_data(const struct http_server_conn *conn) {
+    return conn->private_data;
+}
+
+void
 http_server_conn_disconnect(struct http_server_conn *conn) {
     io_tcp_server_conn_disconnect(conn->tcp_conn);
 }
