@@ -235,10 +235,6 @@ http_client_on_tcp_event(struct io_tcp_client *tcp_client,
         http_client_signal_event(client, HTTP_CLIENT_EVENT_CONN_CLOSED, NULL);
         break;
 
-    case IO_TCP_CLIENT_EVENT_CONN_LOST:
-        http_client_signal_event(client, HTTP_CLIENT_EVENT_CONN_LOST, NULL);
-        break;
-
     case IO_TCP_CLIENT_EVENT_ERROR:
         http_client_error(client, "%s", c_get_error());
         break;

@@ -543,11 +543,6 @@ http_server_on_tcp_event(struct io_tcp_server *tcp_server,
         io_tcp_server_conn_set_private_data(tcp_conn, NULL);
         break;
 
-    case IO_TCP_SERVER_EVENT_CONN_LOST:
-        http_server_conn_delete(conn);
-        io_tcp_server_conn_set_private_data(tcp_conn, NULL);
-        break;
-
     case IO_TCP_SERVER_EVENT_ERROR:
         http_server_error(server, "%s", c_get_error());
         break;

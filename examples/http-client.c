@@ -194,10 +194,6 @@ httpex_on_client_event(struct http_client *client,
     case HTTP_CLIENT_EVENT_CONN_CLOSED:
         httpex.do_exit = true;
         break;
-
-    case HTTP_CLIENT_EVENT_CONN_LOST:
-        httpex.do_exit = true;
-        break;
     }
 }
 

@@ -202,7 +202,6 @@ enum http_client_event {
     HTTP_CLIENT_EVENT_CONN_ESTABLISHED,
     HTTP_CLIENT_EVENT_CONN_FAILED,
     HTTP_CLIENT_EVENT_CONN_CLOSED,
-    HTTP_CLIENT_EVENT_CONN_LOST,
 };
 
 typedef void (*http_client_event_cb)(struct http_client *,
