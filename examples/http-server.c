@@ -37,9 +37,9 @@ static void httpex_on_server_event(struct http_server *,
                                    enum http_server_event, void *,
                                    void *);
 
-static int httpex_on_request_root_get(struct http_request *, void *);
-static int httpex_on_request_number_get(struct http_request *, void *);
-static int httpex_on_request_private_get(struct http_request *, void *);
+static void httpex_on_request_root_get(struct http_request *, void *);
+static void httpex_on_request_number_get(struct http_request *, void *);
+static void httpex_on_request_private_get(struct http_request *, void *);
 
 static struct httpex httpex;
 
@@ -194,13 +194,12 @@ httpex_on_server_event(struct http_server *server,
     }
 }
 
-static int
+static void
 httpex_on_request_root_get(struct http_request *request, void *arg) {
     http_reply_string(request, HTTP_200_OK, NULL, "hello world\n");
-    return 0;
 }
 
-static int
+static void
 httpex_on_request_number_get(struct http_request *request, void *arg) {
     const char *string;
     int64_t number;
@@ -210,23 +209,21 @@ httpex_on_request_number_get(struct http_request *request, void *arg) {
     string = http_request_named_parameter(request, "n");
     if (!string) {
         http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL, NULL);
-        return 0;
+        return;
     }
 
     if (c_parse_i64(string, &number, NULL) == -1) {
         http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL,
                          "cannot parse number: %s", c_get_error());
-        return 0;
+        return;
     }
 
     body_sz = c_asprintf(&body, "%"PRIi64"\n", number);
 
-    http_reply_data_nocopy(request, HTTP_200_OK, NULL,
-                           body, (size_t)body_sz);
-    return 0;
+    http_reply_data_nocopy(request, HTTP_200_OK, NULL, body, (size_t)body_sz);
 }
 
-static int
+static void
 httpex_on_request_private_get(struct http_request *request, void *arg) {
     const char *user, *password;
 
@@ -239,7 +236,7 @@ httpex_on_request_private_get(struct http_request *request, void *arg) {
 
         http_reply_error(request, HTTP_401_UNAUTHORIZED, headers,
                          "missing authentication data");
-        return 0;
+        return;
     }
 
     http_request_basic_auth_data(request, &user, &password);
@@ -247,9 +244,8 @@ httpex_on_request_private_get(struct http_request *request, void *arg) {
     if (strcmp(user, "root") != 0 || strcmp(password, "root") != 0) {
         http_reply_error(request, HTTP_401_UNAUTHORIZED, NULL,
                          "invalid credentials");
-        return 0;
+        return;
     }
 
     http_reply_string(request, HTTP_200_OK, NULL, "access authorized");
-    return 0;
 }

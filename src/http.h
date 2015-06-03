@@ -207,8 +207,8 @@ enum http_client_event {
 typedef void (*http_client_event_cb)(struct http_client *,
                                      enum http_client_event, void *,
                                      void *);
-typedef int (*http_client_response_cb)(struct http_client *,
-                                       struct http_response *, void *);
+typedef void (*http_client_response_cb)(struct http_client *,
+                                        struct http_response *, void *);
 
 struct http_client *http_client_new(struct io_base *);
 void http_client_delete(struct http_client *);
@@ -242,7 +242,7 @@ void http_client_request_string(struct http_client *, enum http_method,
 struct http_router;
 struct http_server_conn;
 
-typedef int (*http_route_cb)(struct http_request *, void *);
+typedef void (*http_route_cb)(struct http_request *, void *);
 
 struct http_router *http_router_new(void);
 void http_router_delete(struct http_router *);

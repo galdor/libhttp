@@ -35,8 +35,8 @@ static void httpex_on_signal(int, void *);
 
 static void httpex_on_client_event(struct http_client *,
                                    enum http_client_event, void *, void *);
-static int httpex_on_client_response(struct http_client *,
-                                     struct http_response *, void *);
+static void httpex_on_client_response(struct http_client *,
+                                      struct http_response *, void *);
 
 static struct httpex httpex;
 
@@ -194,7 +194,7 @@ httpex_on_client_event(struct http_client *client,
     }
 }
 
-static int
+static void
 httpex_on_client_response(struct http_client *client,
                           struct http_response *response, void *arg) {
     const struct http_request *request;
@@ -216,6 +216,4 @@ httpex_on_client_response(struct http_client *client,
     httpex.nb_responses++;
     if (httpex.nb_responses == c_ptr_vector_length(httpex.uris))
         http_client_disconnect(client);
-
-    return 0;
 }

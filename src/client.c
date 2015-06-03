@@ -288,28 +288,18 @@ http_client_on_response(struct http_client *client,
 
     request = c_queue_pop(client->requests);
     if (!request) {
-        c_set_error("response received without request");
-        goto error;
+        http_client_error(client, "response received without request");
+
+        http_response_delete(response);
+        http_client_disconnect(client);
+        return;
     }
 
     response->request = request;
 
-    if (request->response_cb) {
-        if (request->response_cb(client, response,
-                                 request->response_cb_arg) == -1) {
-            goto error;
-        }
-    }
+    if (request->response_cb)
+        request->response_cb(client, response, request->response_cb_arg);
 
     http_request_delete(request);
     http_response_delete(response);
-    return;
-
-error:
-    http_client_error(client, "%s", c_get_error());
-
-    http_request_delete(request);
-    http_response_delete(response);
-
-    http_client_disconnect(client);
 }
