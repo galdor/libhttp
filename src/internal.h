@@ -237,10 +237,10 @@ void http_client_trace(struct http_client *, const char *, ...)
 void http_client_error(struct http_client *, const char *, ...)
     __attribute__ ((format(printf, 2, 3)));
 
-int http_client_write_request(struct http_client *,
-                              const struct http_request *);
-int http_client_send_request(struct http_client *, struct http_request *,
-                             http_client_response_cb, void *);
+void http_client_write_request(struct http_client *,
+                               const struct http_request *);
+void http_client_send_request(struct http_client *, struct http_request *,
+                              http_client_response_cb, void *);
 
 /* Router */
 struct http_route {
@@ -306,10 +306,10 @@ struct http_server_conn *http_server_conn_new(struct http_server *,
                                               struct io_tcp_server_conn *);
 void http_server_conn_delete(struct http_server_conn *);
 
-int http_server_conn_write_response(struct http_server_conn *,
+void http_server_conn_write_response(struct http_server_conn *,
                                     const struct http_response *);
-int http_server_conn_send_response(struct http_server_conn *,
-                                   struct http_request *,
-                                   struct http_response *);
+void http_server_conn_send_response(struct http_server_conn *,
+                                    struct http_request *,
+                                    struct http_response *);
 
 #endif

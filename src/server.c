@@ -84,7 +84,7 @@ http_server_conn_disconnect(struct http_server_conn *conn) {
     io_tcp_server_conn_disconnect(conn->tcp_conn);
 }
 
-int
+void
 http_server_conn_write_response(struct http_server_conn *conn,
                                 const struct http_response *response) {
     struct c_buffer *wbuf;
@@ -92,10 +92,10 @@ http_server_conn_write_response(struct http_server_conn *conn,
     wbuf = io_tcp_server_conn_wbuf(conn->tcp_conn);
     http_response_to_buffer(response, wbuf);
 
-    return io_tcp_server_conn_signal_data_written(conn->tcp_conn);
+    io_tcp_server_conn_signal_data_written(conn->tcp_conn);
 }
 
-int
+void
 http_server_conn_send_response(struct http_server_conn *conn,
                                struct http_request *request,
                                struct http_response *response) {
@@ -114,16 +114,13 @@ http_server_conn_send_response(struct http_server_conn *conn,
         server->response_cb(response, server->response_cb_arg);
 
     if (!request) {
-        if (http_server_conn_write_response(conn, response) == -1)
-            goto error;
-
+        http_server_conn_write_response(conn, response);
         http_response_delete(response);
-        return 0;
+        return;
     }
 
     if (request == c_queue_peek(conn->requests)) {
-        if (http_server_conn_write_response(conn, response) == -1)
-            goto error;
+        http_server_conn_write_response(conn, response);
 
         c_queue_pop(conn->requests);
         http_request_delete(request);
@@ -140,8 +137,7 @@ http_server_conn_send_response(struct http_server_conn *conn,
             if (oresponse->request != orequest)
                 break;
 
-            if (http_server_conn_write_response(conn, oresponse) == -1)
-                goto error;
+            http_server_conn_write_response(conn, oresponse);
 
             c_queue_pop(conn->requests);
             http_request_delete(request);
@@ -150,22 +146,13 @@ http_server_conn_send_response(struct http_server_conn *conn,
             http_response_delete(response);
         }
 
-        return 0;
+        return;
     }
 
     c_queue_push(conn->responses, response);
-
-    return 0;
-
-error:
-    http_response_delete(response);
-
-    http_server_error(conn->server, "connection error: %s", c_get_error());
-    http_server_conn_disconnect(conn);
-    return -1;
 }
 
-int
+void
 http_reply_error(struct http_request *request, enum http_status status,
                  struct http_headers *headers, const char *fmt, ...) {
     struct http_server *server;
@@ -185,15 +172,11 @@ http_reply_error(struct http_request *request, enum http_status status,
         c_strlcpy(error, http_status_to_string(status), C_ERROR_BUFSZ);
     }
 
-    if (server->error_cb(request, status, headers, error,
-                         server->error_cb_arg) == -1) {
-        return -1;
-    }
-
-    return 0;
+    server->error_cb(request, status, headers, error,
+                     server->error_cb_arg);
 }
 
-int
+void
 http_reply_empty(struct http_request *request, enum http_status status,
                  struct http_headers *headers) {
     struct http_response *response;
@@ -206,17 +189,16 @@ http_reply_empty(struct http_request *request, enum http_status status,
         http_headers_delete(headers);
     }
 
-    return http_server_conn_send_response(request->conn, request, response);
+    http_server_conn_send_response(request->conn, request, response);
 }
 
-int
+void
 http_reply_data(struct http_request *request, enum http_status status,
                 struct http_headers *headers, const void *data, size_t sz) {
-    return http_reply_data_nocopy(request, status, headers,
-                                  c_memdup(data, sz), sz);
+    http_reply_data_nocopy(request, status, headers, c_memdup(data, sz), sz);
 }
 
-int
+void
 http_reply_data_nocopy(struct http_request *request, enum http_status status,
                        struct http_headers *headers, void *data, size_t sz) {
     struct http_response *response;
@@ -232,10 +214,10 @@ http_reply_data_nocopy(struct http_request *request, enum http_status status,
     response->body_sz = sz;
     response->body = data;
 
-    return http_server_conn_send_response(request->conn, request, response);
+    http_server_conn_send_response(request->conn, request, response);
 }
 
-int
+void
 http_reply_string(struct http_request *request, enum http_status status,
                   struct http_headers *headers, const char *string) {
     struct http_response *response;
@@ -251,7 +233,7 @@ http_reply_string(struct http_request *request, enum http_status status,
     response->body_sz = strlen(string);
     response->body = c_strndup(string, response->body_sz);
 
-    return http_server_conn_send_response(request->conn, request, response);
+    http_server_conn_send_response(request->conn, request, response);
 }
 
 static void
@@ -284,12 +266,7 @@ http_server_conn_on_data(struct http_server_conn *conn) {
             request = http_request_new();
             request->conn = conn;
 
-            if (http_reply_error(request, status, NULL,
-                                 "%s", c_get_error()) == -1) {
-                http_server_error(server, "cannot send error response: %s",
-                                  c_get_error());
-            }
-
+            http_reply_error(request, status, NULL, "%s", c_get_error());
             http_server_conn_disconnect(conn);
             return;
         } else if (ret == 0) {
@@ -323,14 +300,7 @@ http_server_conn_on_request(struct http_server_conn *conn,
     c_queue_push(conn->requests, request);
 
     if (server->request_cb) {
-        if (server->request_cb(request, server->request_cb_arg) == -1) {
-            http_server_error(server, "request callback error: %s",
-                              c_get_error());
-
-            http_server_conn_disconnect(conn);
-            *pdisconnected = true;
-            return;
-        }
+        server->request_cb(request, server->request_cb_arg);
 
         if (c_queue_peek(conn->requests) != request) {
             /* A response was sent in the callback (yes, this is a hack) */
@@ -342,29 +312,13 @@ http_server_conn_on_request(struct http_server_conn *conn,
                                    request->method, request->target_path,
                                    &status);
     if (!route) {
-        if (http_reply_error(request, status, NULL, NULL) == -1) {
-            http_server_error(server, "cannot send error response: %s",
-                              c_get_error());
-
-            c_queue_pop(conn->requests);
-            http_request_delete(request);
-
-            http_server_conn_disconnect(conn);
-            *pdisconnected = true;
-        }
-
+        http_reply_error(request, status, NULL, NULL);
         return;
     }
 
     http_request_extract_named_parameters(request, route);
 
-    if (route->cb(request, route->cb_arg) == -1) {
-        http_server_error(server, "route callback error: %s", c_get_error());
-
-        http_server_conn_disconnect(conn);
-        *pdisconnected = true;
-        return;
-    }
+    route->cb(request, route->cb_arg);
 
     if (do_close) {
         http_server_conn_disconnect(conn);
@@ -380,9 +334,9 @@ static void http_server_on_tcp_event(struct io_tcp_server *,
                                      struct io_tcp_server_conn *,
                                      enum io_tcp_server_event, void *);
 
-static int http_server_default_error_cb(struct http_request *, enum http_status,
-                                        struct http_headers *,
-                                        const char *, void *);
+static void http_server_default_error_cb(struct http_request *,
+                                         enum http_status, struct http_headers *,
+                                         const char *, void *);
 
 struct http_server *
 http_server_new(struct io_base *io_base, struct http_router *router) {
@@ -565,7 +519,7 @@ http_server_on_tcp_event(struct io_tcp_server *tcp_server,
     }
 }
 
-static int
+static void
 http_server_default_error_cb(struct http_request *request,
                              enum http_status status,
                              struct http_headers *headers,
@@ -580,11 +534,5 @@ http_server_default_error_cb(struct http_request *request,
     body_sz = c_asprintf(&body, "<h1>%d %s</h1><p>%s</p>",
                          status, http_status_to_string(status), error);
 
-    if (http_reply_data_nocopy(request, status, headers,
-                               body, (size_t)body_sz) == -1) {
-        c_free(body);
-        return -1;
-    }
-
-    return 0;
+    http_reply_data_nocopy(request, status, headers, body, (size_t)body_sz);
 }

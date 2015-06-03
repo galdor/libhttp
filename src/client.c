@@ -118,7 +118,7 @@ http_client_error(struct http_client *client, const char *fmt, ...) {
     http_client_signal_event(client, HTTP_CLIENT_EVENT_ERROR, buf);
 }
 
-int
+void
 http_client_write_request(struct http_client *client,
                           const struct http_request *request) {
 
@@ -127,10 +127,10 @@ http_client_write_request(struct http_client *client,
     wbuf = io_tcp_client_wbuf(client->tcp_client);
     http_request_to_buffer(request, wbuf);
 
-    return io_tcp_client_signal_data_written(client->tcp_client);
+    io_tcp_client_signal_data_written(client->tcp_client);
 }
 
-int
+void
 http_client_send_request(struct http_client *client,
                          struct http_request *request,
                          http_client_response_cb cb, void *cb_arg) {
@@ -141,19 +141,12 @@ http_client_send_request(struct http_client *client,
     request->response_cb = cb;
     request->response_cb_arg = cb_arg;
 
-    if (http_client_write_request(client, request) == -1) {
-        http_request_delete(request);
-
-        http_client_error(client, "%s", c_get_error());
-        http_client_disconnect(client);
-        return -1;
-    }
+    http_client_write_request(client, request);
 
     c_queue_push(client->requests, request);
-    return 0;
 }
 
-int
+void
 http_client_request_empty(struct http_client *client, enum http_method method,
                           struct http_uri *uri, struct http_headers *headers,
                           http_client_response_cb cb, void *cb_arg) {
@@ -169,20 +162,19 @@ http_client_request_empty(struct http_client *client, enum http_method method,
         http_headers_delete(headers);
     }
 
-    return http_client_send_request(client, request, cb, cb_arg);
+    http_client_send_request(client, request, cb, cb_arg);
 }
 
-int
+void
 http_client_request_data(struct http_client *client, enum http_method method,
                          struct http_uri *uri, struct http_headers *headers,
                          const void *data, size_t sz,
-                          http_client_response_cb cb, void *cb_arg) {
-    return http_client_request_data_nocopy(client, method, uri, headers,
-                                           c_memdup(data, sz), sz,
-                                           cb, cb_arg);
+                         http_client_response_cb cb, void *cb_arg) {
+    http_client_request_data_nocopy(client, method, uri, headers,
+                                    c_memdup(data, sz), sz, cb, cb_arg);
 }
 
-int
+void
 http_client_request_data_nocopy(struct http_client *client,
                                 enum http_method method, struct http_uri *uri,
                                 struct http_headers *headers,
@@ -202,16 +194,16 @@ http_client_request_data_nocopy(struct http_client *client,
     request->body = data;
     request->body_sz = sz;
 
-    return http_client_send_request(client, request, cb, cb_arg);
+    http_client_send_request(client, request, cb, cb_arg);
 }
 
-int
+void
 http_client_request_string(struct http_client *client, enum http_method method,
                            struct http_uri *uri, struct http_headers *headers,
                            const char *string,
                            http_client_response_cb cb, void *cb_arg) {
-    return http_client_request_data(client, method, uri, headers,
-                                    string, strlen(string), cb, cb_arg);
+    http_client_request_data(client, method, uri, headers,
+                             string, strlen(string), cb, cb_arg);
 }
 
 static void

@@ -179,11 +179,8 @@ httpex_on_client_event(struct http_client *client,
 
             uri = c_ptr_vector_entry(httpex.uris, i);
 
-            if (http_client_request_empty(client, HTTP_GET, http_uri_clone(uri),
-                                          NULL, httpex_on_client_response,
-                                          NULL) == -1) {
-                httpex_die("cannot send request: %s", c_get_error());
-            }
+            http_client_request_empty(client, HTTP_GET, http_uri_clone(uri),
+                                      NULL, httpex_on_client_response, NULL);
         }
         break;
 
