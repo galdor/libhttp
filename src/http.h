@@ -258,6 +258,8 @@ enum http_server_event {
     HTTP_SERVER_EVENT_ERROR,
     HTTP_SERVER_EVENT_LISTENING,
     HTTP_SERVER_EVENT_STOPPED,
+    HTTP_SERVER_EVENT_CONN_ACCEPTED,
+    HTTP_SERVER_EVENT_CONN_CLOSED,
 };
 
 typedef void (*http_server_event_cb)(struct http_server *,

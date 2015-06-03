@@ -541,14 +541,16 @@ http_server_on_tcp_event(struct io_tcp_server *tcp_server,
 
     case IO_TCP_SERVER_EVENT_CONN_ACCEPTED:
         addr = io_tcp_server_conn_address(tcp_conn);
-        http_server_trace(server, "connection from %s",
-                          io_address_host_port_string(addr));
 
         conn = http_server_conn_new(server, tcp_conn);
         io_tcp_server_conn_set_private_data(tcp_conn, conn);
+
+        http_server_signal_event(server, HTTP_SERVER_EVENT_CONN_ACCEPTED, conn);
         break;
 
     case IO_TCP_SERVER_EVENT_CONN_CLOSED:
+        http_server_signal_event(server, HTTP_SERVER_EVENT_CONN_CLOSED, conn);
+
         http_server_conn_delete(conn);
         io_tcp_server_conn_set_private_data(tcp_conn, NULL);
         break;

@@ -162,9 +162,11 @@ static void
 httpex_on_server_event(struct http_server *server,
                        enum http_server_event event, void *data,
                        void *arg) {
+    struct http_server_conn *conn;
+
     switch (event) {
     case HTTP_SERVER_EVENT_TRACE:
-        printf("%s\n", (char *)data);
+        printf("%s\n", (const char *)data);
         break;
 
     case HTTP_SERVER_EVENT_ERROR:
@@ -176,6 +178,18 @@ httpex_on_server_event(struct http_server *server,
 
     case HTTP_SERVER_EVENT_STOPPED:
         httpex.do_exit = true;
+        break;
+
+    case HTTP_SERVER_EVENT_CONN_ACCEPTED:
+        conn = data;
+        printf("%s  connection accepted\n",
+               io_address_host_string(http_server_conn_address(conn)));
+        break;
+
+    case HTTP_SERVER_EVENT_CONN_CLOSED:
+        conn = data;
+        printf("%s  connection closed\n",
+               io_address_host_string(http_server_conn_address(conn)));
         break;
     }
 }
