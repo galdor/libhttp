@@ -56,8 +56,24 @@ main(int argc, char **argv) {
     }
     if (http_uri_path(uri))
         printf("- %-12s  '%s'\n", "path", http_uri_path(uri));
-    if (http_uri_query(uri))
+    if (http_uri_query(uri)) {
+        size_t nb_params;
+
         printf("- %-12s  '%s'\n", "query", http_uri_query(uri));
+
+        nb_params = http_uri_nb_query_parameters(uri);
+        for (size_t i = 0; i < nb_params; i++) {
+            const char *name, *value;
+
+            name = http_uri_nth_query_parameter(uri, i, &value);
+
+            if (value) {
+                printf("  %-12s  %s\n", name, value);
+            } else {
+                printf("  %-12s\n", name);
+            }
+        }
+    }
     if (http_uri_fragment(uri))
         printf("- %-12s  '%s'\n", "fragment", http_uri_fragment(uri));
 

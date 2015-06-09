@@ -53,6 +53,13 @@ const char *http_uri_path(const struct http_uri *);
 const char *http_uri_query(const struct http_uri *);
 const char *http_uri_fragment(const struct http_uri *);
 
+size_t http_uri_nb_query_parameters(const struct http_uri *);
+const char *http_uri_nth_query_parameter(const struct http_uri *, size_t,
+                                         const char **);
+bool http_uri_has_query_parameter(const struct http_uri *, const char *,
+                                  const char **);
+const char *http_uri_query_parameter(const struct http_uri *, const char *);
+
 /* Protocol */
 enum http_version {
     HTTP_1_0,
@@ -180,6 +187,14 @@ bool http_request_has_auth_data(const struct http_request *);
 enum http_auth_scheme http_request_auth_scheme(const struct http_request *);
 void http_request_basic_auth_data(const struct http_request *,
                                   const char **, const char **);
+
+size_t http_request_nb_query_parameters(const struct http_request *);
+const char *http_request_nth_query_parameter(const struct http_request *,
+                                             size_t, const char **);
+bool http_request_has_query_parameter(const struct http_request *,
+                                      const char *, const char **);
+const char *http_request_query_parameter(const struct http_request *,
+                                         const char *);
 
 /* Response */
 struct http_response;

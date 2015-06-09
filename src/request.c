@@ -325,6 +325,29 @@ http_request_basic_auth_data(const struct http_request *request,
     *ppassword = request->auth->u.basic.password;
 }
 
+size_t
+http_request_nb_query_parameters(const struct http_request *request) {
+    return http_uri_nb_query_parameters(request->target_uri);
+}
+
+const char *
+http_request_nth_query_parameter(const struct http_request *request,
+                                 size_t idx, const char **pvalue) {
+    return http_uri_nth_query_parameter(request->target_uri, idx, pvalue);
+}
+
+bool
+http_request_has_query_parameter(const struct http_request *request,
+                                 const char *name, const char **pvalue) {
+    return http_uri_has_query_parameter(request->target_uri, name, pvalue);
+}
+
+const char *
+http_request_query_parameter(const struct http_request *request,
+                             const char *name) {
+    return http_uri_query_parameter(request->target_uri, name);
+}
+
 bool
 http_request_can_have_body(const struct http_request *request) {
     return request->method == HTTP_POST

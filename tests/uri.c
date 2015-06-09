@@ -21,6 +21,7 @@
 
 TEST(base) {
     struct http_uri *uri;
+    const char *value;
 
 #define HTTPT_PARSE_URI(str_)                                  \
     do {                                                       \
@@ -128,18 +129,34 @@ TEST(base) {
 
     HTTPT_PARSE_URI("http://example.com?a");
     TEST_STRING_EQ(uri->query, "a");
+    TEST_BOOL_EQ(http_uri_has_query_parameter(uri, "a", &value), true);
+    TEST_PTR_NULL(value);
     http_uri_delete(uri);
 
     HTTPT_PARSE_URI("http://example.com?a=1&b=2&foo=bar");
     TEST_STRING_EQ(uri->query, "a=1&b=2&foo=bar");
+    TEST_BOOL_EQ(http_uri_has_query_parameter(uri, "a", &value), true);
+    TEST_STRING_EQ(value, "1");
+    TEST_BOOL_EQ(http_uri_has_query_parameter(uri, "b", &value), true);
+    TEST_STRING_EQ(value, "2");
+    TEST_BOOL_EQ(http_uri_has_query_parameter(uri, "foo", &value), true);
+    TEST_STRING_EQ(value, "bar");
     http_uri_delete(uri);
 
     HTTPT_PARSE_URI("http://example.com?:path@=/a/b/c&?=?");
     TEST_STRING_EQ(uri->query, ":path@=/a/b/c&?=?");
+    TEST_BOOL_EQ(http_uri_has_query_parameter(uri, ":path@", &value), true);
+    TEST_STRING_EQ(value, "/a/b/c");
+    TEST_BOOL_EQ(http_uri_has_query_parameter(uri, "?", &value), true);
+    TEST_STRING_EQ(value, "?");
     http_uri_delete(uri);
 
-    HTTPT_PARSE_URI("http://example.com?%3fabc");
-    TEST_STRING_EQ(uri->query, "?abc");
+    HTTPT_PARSE_URI("http://example.com?%3fabc;a=%20");
+    TEST_STRING_EQ(uri->query, "%3fabc;a=%20");
+    TEST_BOOL_EQ(http_uri_has_query_parameter(uri, "?abc", &value), true);
+    TEST_PTR_NULL(value);
+    TEST_BOOL_EQ(http_uri_has_query_parameter(uri, "a", &value), true);
+    TEST_STRING_EQ(value, " ");
     http_uri_delete(uri);
 
     /* Fragment */

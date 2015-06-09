@@ -52,6 +52,17 @@ struct http_path {
     struct c_ptr_vector *segments;
 };
 
+/* Query parameter */
+struct http_query_parameter {
+    char *name;
+    char *value;
+};
+
+void http_query_parameter_init(struct http_query_parameter *);
+void http_query_parameter_free(struct http_query_parameter *);
+
+struct c_vector *http_query_parameters_parse(const char *);
+
 /* URI */
 struct http_uri {
     char *scheme;
@@ -63,6 +74,8 @@ struct http_uri {
     char *path;
     char *query;
     char *fragment;
+
+    struct c_vector *query_parameters;
 };
 
 /* Protocol */
