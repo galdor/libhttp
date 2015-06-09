@@ -450,6 +450,9 @@ http_uri_userinfo_decode(const char *data, size_t sz) {
             len -= 3;
 
             start = ptr;
+        } else {
+            c_set_error("invalid user info character");
+            goto error;
         }
     }
 

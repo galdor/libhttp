@@ -94,7 +94,7 @@ TEST(base) {
     TEST_STRING_EQ(uri->password, "bar");
     http_uri_delete(uri);
 
-    HTTPT_PARSE_URI("http://foo:a:b:c@a");
+    HTTPT_PARSE_URI("http://foo:a%3ab%3ac@a");
     TEST_STRING_EQ(uri->host, "a");
     TEST_STRING_EQ(uri->user, "foo");
     TEST_STRING_EQ(uri->password, "a:b:c");
