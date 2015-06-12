@@ -294,6 +294,13 @@ http_response_header(const struct http_response *response, const char *name) {
     return http_headers_header(response->headers, name);
 }
 
+void *
+http_response_body(const struct http_response *response, size_t *psz) {
+    if (psz)
+        *psz = response->body_sz;
+    return response->body;
+}
+
 bool
 http_response_can_have_body(const struct http_response *response) {
     if (response->status >= 100 && response->status < 200)

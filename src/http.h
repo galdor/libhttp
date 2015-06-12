@@ -208,6 +208,8 @@ const char *http_response_nth_header(const struct http_response *, size_t,
                                      const char **);
 const char *http_response_header(const struct http_response *, const char *);
 
+void *http_response_body(const struct http_response *, size_t *);
+
 /* Client */
 struct http_client;
 
