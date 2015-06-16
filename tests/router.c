@@ -82,11 +82,11 @@ TEST(base) {
 
     http_router_delete(router);
 
-    /* Wildcards */
+    /* Named parameters */
     router = http_router_new();
-    http_router_bind(router, "/a",     HTTP_GET, (void *)1, NULL);
-    http_router_bind(router, "/b/?",   HTTP_GET, (void *)2, NULL);
-    http_router_bind(router, "/b/?/y", HTTP_GET, (void *)3, NULL);
+    http_router_bind(router, "/a",      HTTP_GET, (void *)1, NULL);
+    http_router_bind(router, "/b/:x",   HTTP_GET, (void *)2, NULL);
+    http_router_bind(router, "/b/:x/y", HTTP_GET, (void *)3, NULL);
 
     HTTP_ROUTE_FOUND("/a",     HTTP_GET, 1);
     HTTP_ROUTE_FOUND("/b/x",   HTTP_GET, 2);
