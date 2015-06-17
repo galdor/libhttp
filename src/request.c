@@ -186,20 +186,19 @@ http_request_parse(const char *data, size_t sz,
     if (!http_request_can_have_body(request))
         goto end;
 
-    if (!request->has_content_length)
-        HTTP_FAIL(HTTP_411_LENGTH_REQUIRED, "missing Content-Length header");
+    if (request->has_content_length) {
+        if (request->content_length > HTTP_REQUEST_MAX_CONTENT_LENGTH)
+            HTTP_FAIL(HTTP_413_PAYLOAD_TOO_LARGE, "payload too large");
 
-    if (request->content_length > HTTP_REQUEST_MAX_CONTENT_LENGTH)
-        HTTP_FAIL(HTTP_413_PAYLOAD_TOO_LARGE, "payload too large");
+        if (len < request->content_length)
+            HTTP_TRUNCATED();
 
-    if (len < request->content_length)
-        HTTP_TRUNCATED();
+        request->body_sz = request->content_length;
+        request->body = c_strndup(ptr, request->content_length);
 
-    request->body_sz = request->content_length;
-    request->body = c_strndup(ptr, request->content_length);
-
-    ptr += request->body_sz;
-    len -= request->body_sz;
+        ptr += request->body_sz;
+        len -= request->body_sz;
+    }
 
 #undef HTTP_FAIL
 #undef HTTP_TRUNCATED
