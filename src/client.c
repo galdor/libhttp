@@ -88,7 +88,8 @@ http_client_connect(struct http_client *client,
 
 int
 http_client_connect_uri(struct http_client *client,
-                        const struct http_uri *uri) {
+                        const struct http_uri *uri,
+                        const struct io_ssl_cfg *ssl_cfg) {
     const char *host;
     uint16_t port;
 
@@ -103,9 +104,16 @@ http_client_connect_uri(struct http_client *client,
             port = 80;
         } else if (strcasecmp(scheme, "https") == 0) {
             if (!io_tcp_client_is_ssl_enabled(client->tcp_client)) {
-                c_set_error("https uri scheme not supported: "
-                            "ssl is not enabled");
-                return -1;
+                if (!ssl_cfg) {
+                    c_set_error("missing ssl configuration for "
+                                "https uri scheme");
+                    return -1;
+                }
+
+                if (http_client_enable_ssl(client, ssl_cfg) == -1) {
+                    c_set_error("cannot enable ssl: %s", c_get_error());
+                    return -1;
+                }
             }
 
             port = 443;
