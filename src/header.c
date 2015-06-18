@@ -74,7 +74,7 @@ http_headers_parse(const char *data, size_t sz, struct http_headers **pheaders,
 
     headers = http_headers_new();
 
-    for (;;) {
+    while (len > 0) {
         const char *name_start, *value_start;
         size_t name_length, value_length;
         char *name, *value;
@@ -83,6 +83,8 @@ http_headers_parse(const char *data, size_t sz, struct http_headers **pheaders,
             ptr += 2;
             len -= 2;
             break;
+        } else if (len >= 1 && ptr[0] == '\r') {
+            HTTP_TRUNCATED();
         }
 
         /* Name */

@@ -54,6 +54,7 @@ http_response_parse(const char *data, size_t sz,
     char status_string[4];
     size_t status_sz;
     int32_t status_value;
+    int ret;
 
     ptr = data;
     len = sz;
@@ -137,8 +138,11 @@ http_response_parse(const char *data, size_t sz,
     http_headers_delete(response->headers);
     response->headers = NULL;
 
-    if (http_headers_parse(ptr, len, &response->headers, NULL, &toklen) == -1)
+    ret = http_headers_parse(ptr, len, &response->headers, NULL, &toklen);
+    if (ret == -1)
         HTTP_FAIL(NULL);
+    if (ret == 0)
+        HTTP_TRUNCATED();
 
     ptr += toklen;
     len -= toklen;
@@ -152,21 +156,46 @@ http_response_parse(const char *data, size_t sz,
     if (!http_response_can_have_body(response))
         goto end;
 
-    /* TODO chunked coding */
-    if (!response->has_content_length)
-        goto end;
+    if (response->has_content_length) {
+        if (response->content_length > HTTP_RESPONSE_MAX_CONTENT_LENGTH)
+            HTTP_FAIL("payload too large");
 
-    if (response->content_length > HTTP_RESPONSE_MAX_CONTENT_LENGTH)
-        HTTP_FAIL("payload too large");
+        if (len < response->content_length)
+            HTTP_TRUNCATED();
 
-    if (len < response->content_length)
-        HTTP_TRUNCATED();
+        response->body_sz = response->content_length;
+        response->body = c_strndup(ptr, response->content_length);
 
-    response->body_sz = response->content_length;
-    response->body = c_strndup(ptr, response->content_length);
+        ptr += response->body_sz;
+        len -= response->body_sz;
+    } else if (response->is_body_chunked) {
+        struct http_headers *trailer;
+        size_t chunked_data_sz;
 
-    ptr += response->body_sz;
-    len -= response->body_sz;
+        ret = http_chunked_data_parse(ptr, len,
+                                      &response->body, &response->body_sz,
+                                      &chunked_data_sz);
+        if (ret == -1)
+            HTTP_FAIL("invalid chunked body: %s", c_get_error());
+        if (ret == 0)
+            HTTP_TRUNCATED();
+
+        ptr += chunked_data_sz;
+        len -= chunked_data_sz;
+
+        /* Trailer */
+        ret = http_headers_parse(ptr, len, &trailer, NULL, &toklen);
+        if (ret == -1)
+            HTTP_FAIL(NULL);
+        if (ret == 0)
+            HTTP_TRUNCATED();
+
+        http_headers_merge_nocopy(response->headers, trailer);
+        http_headers_delete(trailer);
+
+        ptr += toklen;
+        len -= toklen;
+    }
 
 #undef HTTP_FAIL
 #undef HTTP_TRUNCATED
@@ -352,10 +381,11 @@ http_response_preprocess_headers(struct http_response *response) {
 
                 token = c_ptr_vector_entry(tokens, i);
 
-                if (strcasecmp(token, "chunked") == 0
-                 || strcasecmp(token, "compressed") == 0
-                 || strcasecmp(token, "deflate") == 0
-                 || strcasecmp(token, "gzip") == 0) {
+                if (strcasecmp(token, "chunked") == 0) {
+                    response->is_body_chunked = true;
+                } else if (strcasecmp(token, "compressed") == 0
+                        || strcasecmp(token, "deflate") == 0
+                        || strcasecmp(token, "gzip") == 0) {
                     http_string_vector_delete(tokens);
                     HTTP_FAIL("'%s' transfer coding not supported", token);
                 } else {

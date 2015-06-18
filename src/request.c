@@ -72,6 +72,7 @@ http_request_parse(const char *data, size_t sz,
     enum http_status status;
     const char *ptr;
     size_t len, toklen;
+    int ret;
 
     ptr = data;
     len = sz;
@@ -169,10 +170,11 @@ http_request_parse(const char *data, size_t sz,
     http_headers_delete(request->headers);
     request->headers = NULL;
 
-    if (http_headers_parse(ptr, len, &request->headers,
-                           &status, &toklen) == -1) {
+    ret = http_headers_parse(ptr, len, &request->headers, &status, &toklen);
+    if (ret == -1)
         HTTP_FAIL(status, NULL);
-    }
+    if (ret == 0)
+        HTTP_TRUNCATED();
 
     ptr += toklen;
     len -= toklen;

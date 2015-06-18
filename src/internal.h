@@ -124,6 +124,9 @@ struct http_headers {
 int http_headers_parse(const char *, size_t, struct http_headers **,
                        enum http_status *, size_t *);
 
+/* Chunked data */
+int http_chunked_data_parse(const void *, size_t, void **, size_t *, size_t *);
+
 /* Request */
 #define HTTP_REQUEST_TARGET_MAX_LENGTH 2048
 #define HTTP_REQUEST_MAX_CONTENT_LENGTH (64 * 1024 * 1024)
@@ -208,6 +211,7 @@ struct http_response {
     /* When the response was parsed, not generated */
     bool has_content_length;
     size_t content_length;
+    bool is_body_chunked;
 };
 
 struct http_response *http_response_new(void);
