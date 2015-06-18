@@ -419,9 +419,11 @@ http_request_preprocess_headers(struct http_request *request,
                  || strcasecmp(token, "compressed") == 0
                  || strcasecmp(token, "deflate") == 0
                  || strcasecmp(token, "gzip") == 0) {
+                    http_string_vector_delete(tokens);
                     HTTP_FAIL(HTTP_501_NOT_IMPLEMENTED,
                               "'%s' transfer coding not supported", token);
                 } else {
+                    http_string_vector_delete(tokens);
                     HTTP_FAIL(HTTP_501_NOT_IMPLEMENTED,
                               "unknown transfer coding '%s'", token);
                 }

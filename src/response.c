@@ -356,8 +356,10 @@ http_response_preprocess_headers(struct http_response *response) {
                  || strcasecmp(token, "compressed") == 0
                  || strcasecmp(token, "deflate") == 0
                  || strcasecmp(token, "gzip") == 0) {
+                    http_string_vector_delete(tokens);
                     HTTP_FAIL("'%s' transfer coding not supported", token);
                 } else {
+                    http_string_vector_delete(tokens);
                     HTTP_FAIL("unknown transfer coding '%s'", token);
                 }
             }
