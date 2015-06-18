@@ -138,6 +138,8 @@ enum http_status {
 
 const char *http_status_to_string(enum http_status);
 
+bool http_status_is_success(enum http_status);
+
 /* Authentication */
 enum http_auth_scheme {
     HTTP_AUTH_SCHEME_BASIC,

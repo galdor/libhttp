@@ -185,6 +185,11 @@ http_status_to_string(enum http_status status) {
     return strings[status];
 }
 
+bool
+http_status_is_success(enum http_status status) {
+    return status >= 200 && status < 300;
+}
+
 struct c_ptr_vector *
 http_list_parse(const char *string) {
     struct c_ptr_vector *entries;
