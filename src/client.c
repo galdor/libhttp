@@ -80,6 +80,32 @@ http_client_connect(struct http_client *client,
     return io_tcp_client_connect(client->tcp_client, host, port);
 }
 
+int
+http_client_connect_uri(struct http_client *client,
+                        const struct http_uri *uri) {
+    const char *host;
+    uint16_t port;
+
+    host = uri->host;
+
+    port = uri->port_number;
+    if (port == 0) {
+        const char *scheme;
+
+        scheme = http_uri_scheme(uri);
+        if (strcasecmp(scheme, "http") == 0) {
+            port = 80;
+        } else if (strcasecmp(scheme, "https") == 0) {
+            port = 443;
+        } else {
+            c_set_error("unknown uri scheme");
+            return -1;
+        }
+    }
+
+    return http_client_connect(client, host, port);
+}
+
 void
 http_client_disconnect(struct http_client *client) {
     io_tcp_client_disconnect(client->tcp_client);

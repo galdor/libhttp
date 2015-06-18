@@ -239,6 +239,7 @@ void http_client_set_event_cb(struct http_client *,
                               http_client_event_cb, void *);
 
 int http_client_connect(struct http_client *, const char *, uint16_t);
+int http_client_connect_uri(struct http_client *, const struct http_uri *);
 void http_client_disconnect(struct http_client *);
 
 void http_client_request_empty(struct http_client *, enum http_method,
