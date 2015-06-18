@@ -238,6 +238,8 @@ uint16_t http_client_port(const struct http_client *);
 void http_client_set_event_cb(struct http_client *,
                               http_client_event_cb, void *);
 
+int http_client_enable_ssl(struct http_client *, const struct io_ssl_cfg *);
+
 int http_client_connect(struct http_client *, const char *, uint16_t);
 int http_client_connect_uri(struct http_client *, const struct http_uri *);
 void http_client_disconnect(struct http_client *);

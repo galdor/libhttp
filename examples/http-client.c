@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include <signal.h>
+#include <string.h>
 
 #include "http.h"
 
@@ -46,12 +47,15 @@ main(int argc, char **argv) {
     const char *host, *port_string;
     uint16_t port;
     bool use_ssl;
-    const char *ca_path;
+    const char *ca_path, *ca_dir_path;
 
     cmdline = c_command_line_new();
 
     c_command_line_add_flag(cmdline, "s", "ssl", "use ssl");
     c_command_line_add_option(cmdline, NULL, "ca", "the ssl ca certificate",
+                              "path", NULL);
+    c_command_line_add_option(cmdline, NULL, "ca-dir",
+                              "the ssl ca certificate directory",
                               "path", NULL);
 
     c_command_line_add_argument(cmdline, "the host to connect to", "host");
@@ -82,8 +86,10 @@ main(int argc, char **argv) {
     }
 
     use_ssl = c_command_line_is_option_set(cmdline, "ssl");
-    if (use_ssl)
+    if (use_ssl) {
         ca_path = c_command_line_option_value(cmdline, "ca");
+        ca_dir_path = c_command_line_option_value(cmdline, "ca-dir");
+    }
 
     if (use_ssl)
         io_ssl_initialize();
@@ -98,18 +104,16 @@ main(int argc, char **argv) {
     httpex.client = http_client_new(httpex.base);
     http_client_set_event_cb(httpex.client, httpex_on_client_event, NULL);
 
-#if 0
     if (use_ssl) {
         struct io_ssl_cfg cfg;
 
         memset(&cfg, 0, sizeof(struct io_ssl_cfg));
-        cfg.cert_path = cert_path;
-        cfg.key_path = key_path;
+        cfg.ca_cert_directory = ca_dir_path;
+        cfg.ca_cert_path = ca_path;
 
-        if (io_tcp_server_enable_ssl(httpex.server, &cfg) == -1)
+        if (http_client_enable_ssl(httpex.client, &cfg) == -1)
             httpex_die("cannot enable ssl: %s", c_get_error());
     }
-#endif
 
     if (http_client_connect(httpex.client, host, port) == -1)
         httpex_die("cannot connect to %s:%u: %s", host, port, c_get_error());

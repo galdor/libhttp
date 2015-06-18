@@ -75,6 +75,12 @@ http_client_set_event_cb(struct http_client *client,
 }
 
 int
+http_client_enable_ssl(struct http_client *client,
+                       const struct io_ssl_cfg *cfg) {
+    return io_tcp_client_enable_ssl(client->tcp_client, cfg);
+}
+
+int
 http_client_connect(struct http_client *client,
                     const char *host, uint16_t port) {
     return io_tcp_client_connect(client->tcp_client, host, port);
@@ -96,6 +102,12 @@ http_client_connect_uri(struct http_client *client,
         if (strcasecmp(scheme, "http") == 0) {
             port = 80;
         } else if (strcasecmp(scheme, "https") == 0) {
+            if (!io_tcp_client_is_ssl_enabled(client->tcp_client)) {
+                c_set_error("https uri scheme not supported: "
+                            "ssl is not enabled");
+                return -1;
+            }
+
             port = 443;
         } else {
             c_set_error("unknown uri scheme");
