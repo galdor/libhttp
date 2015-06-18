@@ -337,6 +337,32 @@ http_response_preprocess_headers(struct http_response *response) {
                              NULL) == -1) {
                 HTTP_FAIL("cannot parse %s header: %s", name, c_get_error());
             }
+
+        /* -- Transfer-Encoding ------------------------------------------- */
+        } else if (HTTP_HEADER_IS("Transfer-Encoding")) {
+            struct c_ptr_vector *tokens;
+
+            tokens = http_list_parse(value);
+            if (!tokens) {
+                HTTP_FAIL("cannot parse %s header: %s", name, c_get_error());
+            }
+
+            for (size_t i = 0; i < c_ptr_vector_length(tokens); i++) {
+                const char *token;
+
+                token = c_ptr_vector_entry(tokens, i);
+
+                if (strcasecmp(token, "chunked") == 0
+                 || strcasecmp(token, "compressed") == 0
+                 || strcasecmp(token, "deflate") == 0
+                 || strcasecmp(token, "gzip") == 0) {
+                    HTTP_FAIL("'%s' transfer coding not supported", token);
+                } else {
+                    HTTP_FAIL("unknown transfer coding '%s'", token);
+                }
+            }
+
+            http_string_vector_delete(tokens);
         }
 
 #undef HTTP_HEADER_IS
