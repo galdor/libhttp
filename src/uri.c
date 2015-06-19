@@ -569,6 +569,9 @@ http_uri_fragment(const struct http_uri *uri) {
 
 size_t
 http_uri_nb_query_parameters(const struct http_uri *uri) {
+    if (!uri->query_parameters)
+        return 0;
+
     return c_vector_length(uri->query_parameters);
 }
 
@@ -576,6 +579,8 @@ const char *
 http_uri_nth_query_parameter(const struct http_uri *uri, size_t idx,
                              const char **pvalue) {
     const struct http_query_parameter *parameter;
+
+    assert(uri->query_parameters);
 
     parameter = c_vector_entry(uri->query_parameters, idx);
 
@@ -592,6 +597,9 @@ http_uri_has_query_parameter(const struct http_uri *uri, const char *name,
 
     value = NULL;
     found = false;
+
+    if (!uri->query_parameters)
+        return false;
 
     for (size_t i = 0; i < c_vector_length(uri->query_parameters); i++) {
         const struct http_query_parameter *parameter;
