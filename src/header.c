@@ -88,7 +88,7 @@ http_headers_parse(const char *data, size_t sz, struct http_headers **pheaders,
         }
 
         /* Name */
-        toklen = strcspn(ptr, ":");
+        toklen = http_memcspn(ptr, len, ":");
         if (toklen == len) {
             if (len > HTTP_HEADER_NAME_MAX_LENGTH)
                 HTTP_FAIL(HTTP_400_BAD_REQUEST, "header name too long");
@@ -112,7 +112,7 @@ http_headers_parse(const char *data, size_t sz, struct http_headers **pheaders,
         }
 
         /* Value */
-        toklen = strcspn(ptr, "\r");
+        toklen = http_memcspn(ptr, len, "\r");
         if (toklen == len) {
             if (len > HTTP_HEADER_VALUE_MAX_LENGTH)
                 HTTP_FAIL(HTTP_400_BAD_REQUEST, "header value too long");
