@@ -163,6 +163,8 @@ struct http_request {
 
     struct http_auth *auth;
 
+    bool dummy;
+
     /* When the request was generated and sent */
     http_client_response_cb response_cb;
     void *response_cb_arg;

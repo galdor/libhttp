@@ -110,14 +110,8 @@ http_server_conn_send_response(struct http_server_conn *conn,
 
     http_response_finalize(response);
 
-    if (server->response_cb)
+    if (server->response_cb && !request->dummy)
         server->response_cb(response, server->response_cb_arg);
-
-    if (!request) {
-        http_server_conn_write_response(conn, response);
-        http_response_delete(response);
-        return;
-    }
 
     if (request == c_queue_peek(conn->requests)) {
         http_server_conn_write_response(conn, response);
@@ -265,6 +259,8 @@ http_server_conn_on_data(struct http_server_conn *conn) {
 
             request = http_request_new();
             request->conn = conn;
+            request->dummy = true;
+            c_queue_push(conn->requests, request);
 
             http_reply_error(request, status, NULL, "%s", c_get_error());
             http_server_conn_disconnect(conn);
