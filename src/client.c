@@ -131,6 +131,11 @@ http_client_disconnect(struct http_client *client) {
     io_tcp_client_disconnect(client->tcp_client);
 }
 
+bool
+http_client_is_connected(struct http_client *client) {
+    return io_tcp_client_is_connected(client->tcp_client);
+}
+
 void
 http_client_signal_event(struct http_client *client,
                          enum http_client_event event, void *arg) {

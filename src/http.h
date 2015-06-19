@@ -244,6 +244,7 @@ int http_client_connect(struct http_client *, const char *, uint16_t);
 int http_client_connect_uri(struct http_client *, const struct http_uri *,
                             const struct io_ssl_cfg *);
 void http_client_disconnect(struct http_client *);
+bool http_client_is_connected(struct http_client *);
 
 void http_client_request_empty(struct http_client *, enum http_method,
                                struct http_uri *, struct http_headers *,
