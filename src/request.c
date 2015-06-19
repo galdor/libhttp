@@ -527,6 +527,10 @@ http_request_finalize(struct http_request *request,
     port = uri->port ? uri->port_number : http_client_port(client);
 
     http_request_set_header_printf(request, "Host", "%s:%u", host, port);
+
+    /* Content-Length */
+    http_request_set_header_printf(request, "Content-Length", "%zu",
+                                   request->body_sz);
 }
 
 void
