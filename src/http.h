@@ -157,9 +157,9 @@ const char *http_headers_header(struct http_headers *, const char *);
 bool http_headers_has_header(struct http_headers *, const char *);
 
 void http_headers_add(struct http_headers *, const char *, const char *);
-void http_headers_add_nocopy(struct http_headers *, char *, char *);
+void http_headers_add_nocopy(struct http_headers *, const char *, char *);
 void http_headers_set(struct http_headers *, const char *, const char *);
-void http_headers_set_nocopy(struct http_headers *, char *, char *);
+void http_headers_set_nocopy(struct http_headers *, const char *, char *);
 void http_headers_set_vprintf(struct http_headers *, const char *,
                               const char *, va_list);
 void http_headers_set_printf(struct http_headers *, const char *,

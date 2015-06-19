@@ -229,12 +229,12 @@ http_request_server_conn(const struct http_request *request) {
 void
 http_request_add_header(struct http_request *request,
                         const char *name, const char *value) {
-    http_request_add_header_nocopy(request, c_strdup(name), c_strdup(value));
+    http_request_add_header_nocopy(request, name, c_strdup(value));
 }
 
 void
 http_request_add_header_nocopy(struct http_request *request,
-                               char *name, char *value) {
+                               const char *name, char *value) {
     http_headers_add_nocopy(request->headers, name, value);
 }
 

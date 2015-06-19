@@ -274,7 +274,7 @@ http_response_add_header(struct http_response *response,
 
 void
 http_response_add_header_nocopy(struct http_response *response,
-                               char *name, char *value) {
+                                const char *name, char *value) {
     http_headers_add_nocopy(response->headers, name, value);
 }
 

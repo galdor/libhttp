@@ -183,7 +183,7 @@ void http_request_finalize(struct http_request *, struct http_client *);
 void http_request_to_buffer(const struct http_request *, struct c_buffer *);
 
 void http_request_add_header(struct http_request *, const char *, const char *);
-void http_request_add_header_nocopy(struct http_request *, char *, char *);
+void http_request_add_header_nocopy(struct http_request *, const char *, char *);
 void http_request_set_header(struct http_request *, const char *,
                              const char *);
 void http_request_set_header_vprintf(struct http_request *, const char *,
@@ -227,7 +227,8 @@ void http_response_to_buffer(const struct http_response *, struct c_buffer *);
 
 void http_response_add_header(struct http_response *, const char *,
                               const char *);
-void http_response_add_header_nocopy(struct http_response *, char *, char *);
+void http_response_add_header_nocopy(struct http_response *,
+                                     const char *, char *);
 void http_response_set_header(struct http_response *, const char *,
                               const char *);
 void http_response_set_header_vprintf(struct http_response *, const char *,

@@ -141,6 +141,7 @@ http_headers_parse(const char *data, size_t sz, struct http_headers **pheaders,
         value = c_strndup(value_start, value_length);
 
         http_headers_add_nocopy(headers, name, value);
+        c_free(name);
 
         /* End of header */
         if (len < 2)
@@ -210,15 +211,15 @@ http_headers_has_header(struct http_headers *headers, const char *name) {
 void
 http_headers_add(struct http_headers *headers,
                  const char *name, const char *value) {
-    http_headers_add_nocopy(headers, c_strdup(name), c_strdup(value));
+    http_headers_add_nocopy(headers, name, c_strdup(value));
 }
 
 void
 http_headers_add_nocopy(struct http_headers *headers,
-                        char *name, char *value) {
+                        const char *name, char *value) {
     struct http_header header;
 
-    header.name = name;
+    header.name = c_strdup(name);
     header.value = value;
 
     c_vector_append(headers->headers, &header);
@@ -227,19 +228,18 @@ http_headers_add_nocopy(struct http_headers *headers,
 void
 http_headers_set(struct http_headers *headers,
                  const char *name, const char *value) {
-    return http_headers_set_nocopy(headers, c_strdup(name), c_strdup(value));
+    return http_headers_set_nocopy(headers, name, c_strdup(value));
 }
 
 void
-http_headers_set_nocopy(struct http_headers *headers, char *name, char *value) {
+http_headers_set_nocopy(struct http_headers *headers,
+                        const char *name, char *value) {
     for (size_t i = 0; i < c_vector_length(headers->headers); i++) {
         struct http_header *header;
 
         header = c_vector_entry(headers->headers, i);
 
         if (strcasecmp(header->name, name) == 0) {
-            c_free(name);
-
             c_free(header->value);
             header->value = value;
             return;
@@ -278,6 +278,7 @@ http_headers_merge_nocopy(struct http_headers *headers,
         header = c_vector_entry(src->headers, i);
 
         http_headers_set_nocopy(headers, header->name, header->value);
+        c_free(header->name);
     }
 
     c_vector_clear(src->headers);
