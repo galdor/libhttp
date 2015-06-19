@@ -71,7 +71,6 @@ http_query_parameters_parse(const char *string) {
             value_sz = toklen - name_sz - 1;
         }
 
-        /* TODO decode name/value */
         http_query_parameter_init(&param);
 
         param.name = http_query_parameter_decode(name_ptr, name_sz);
