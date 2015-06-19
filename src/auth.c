@@ -43,6 +43,22 @@ http_auth_delete(struct http_auth *auth) {
     c_free0(auth, sizeof(struct http_auth));
 }
 
+char *
+http_generate_basic_auth_header(const char *user, const char *password) {
+    char *credentials, *encoded_credentials;
+    char *header;
+
+    c_asprintf(&credentials, "%s:%s", user, password);
+
+    encoded_credentials = http_base64_encode_string(credentials);
+    c_free(credentials);
+
+    c_asprintf(&header, "Basic %s", encoded_credentials);
+    c_free(encoded_credentials);
+
+    return header;
+}
+
 struct http_auth *
 http_auth_parse_authorization(const char *string) {
     struct http_auth *auth;

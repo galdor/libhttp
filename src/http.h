@@ -145,6 +145,8 @@ enum http_auth_scheme {
     HTTP_AUTH_SCHEME_BASIC,
 };
 
+char *http_generate_basic_auth_header(const char *, const char *);
+
 /* Headers */
 struct http_headers *http_headers_new(void);
 void http_headers_delete(struct http_headers *);
