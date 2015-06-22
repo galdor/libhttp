@@ -567,6 +567,55 @@ http_uri_fragment(const struct http_uri *uri) {
     return uri->fragment;
 }
 
+void
+http_uri_set_scheme(struct http_uri *uri, const char *string) {
+    c_free(uri->scheme);
+    uri->scheme = c_strdup(string);
+}
+
+void
+http_uri_set_user(struct http_uri *uri, const char *string) {
+    c_free(uri->user);
+    uri->user = c_strdup(string);
+}
+
+void
+http_uri_set_password(struct http_uri *uri, const char *string) {
+    c_free(uri->password);
+    uri->password = c_strdup(string);
+}
+
+void
+http_uri_set_host(struct http_uri *uri, const char *string) {
+    c_free(uri->host);
+    uri->host = c_strdup(string);
+}
+
+void
+http_uri_set_port(struct http_uri *uri, uint16_t port) {
+    uri->port_number = port;
+    c_free(uri->port);
+    c_asprintf(&uri->port, "%u", port);
+}
+
+void
+http_uri_set_path(struct http_uri *uri, const char *string) {
+    c_free(uri->path);
+    uri->path = c_strdup(string);
+}
+
+void
+http_uri_set_query(struct http_uri *uri, const char *string) {
+    c_free(uri->query);
+    uri->query = c_strdup(string);
+}
+
+void
+http_uri_set_fragment(struct http_uri *uri, const char *string) {
+    c_free(uri->fragment);
+    uri->fragment = c_strdup(string);
+}
+
 size_t
 http_uri_nb_query_parameters(const struct http_uri *uri) {
     if (!uri->query_parameters)

@@ -53,6 +53,15 @@ const char *http_uri_path(const struct http_uri *);
 const char *http_uri_query(const struct http_uri *);
 const char *http_uri_fragment(const struct http_uri *);
 
+void http_uri_set_scheme(struct http_uri *, const char *);
+void http_uri_set_user(struct http_uri *, const char *);
+void http_uri_set_password(struct http_uri *, const char *);
+void http_uri_set_host(struct http_uri *, const char *);
+void http_uri_set_port(struct http_uri *, uint16_t);
+void http_uri_set_path(struct http_uri *, const char *);
+void http_uri_set_query(struct http_uri *, const char *);
+void http_uri_set_fragment(struct http_uri *, const char *);
+
 size_t http_uri_nb_query_parameters(const struct http_uri *);
 const char *http_uri_nth_query_parameter(const struct http_uri *, size_t,
                                          const char **);
