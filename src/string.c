@@ -17,52 +17,6 @@
 
 #include "internal.h"
 
-size_t
-http_memspn(const void *data, size_t sz, const char *chars) {
-    size_t nb_chars, count;
-    const uint8_t *ptr;
-
-    nb_chars = strlen(chars);
-    ptr = data;
-    count = 0;
-
-    for (size_t i = 0; i < sz; i++) {
-        for (size_t j = 0; j < nb_chars; j++) {
-            if (ptr[i] == chars[j])
-                goto next;
-        }
-
-        return count;
-
-next:
-        count++;
-        continue;
-    }
-
-    return count;
-}
-
-size_t
-http_memcspn(const void *data, size_t sz, const char *chars) {
-    size_t nb_chars, count;
-    const uint8_t *ptr;
-
-    nb_chars = strlen(chars);
-    ptr = data;
-    count = 0;
-
-    for (size_t i = 0; i < sz; i++) {
-        for (size_t j = 0; j < nb_chars; j++) {
-            if (ptr[i] == chars[j])
-                return count;
-        }
-
-        count++;
-    }
-
-    return count;
-}
-
 void
 http_string_vector_delete(struct c_ptr_vector *vector) {
     for (size_t i = 0; i < c_ptr_vector_length(vector); i++)

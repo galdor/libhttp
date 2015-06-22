@@ -51,7 +51,7 @@ http_chunked_data_parse(const void *data, size_t sz,
 
         /* Chunk size */
         /* We ignore extensions */
-        toklen = http_memcspn(ptr, len, "\r");
+        toklen = c_memcspn(ptr, len, "\r");
         if (toklen == len)
             HTTP_TRUNCATED();
 

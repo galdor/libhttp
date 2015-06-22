@@ -62,7 +62,7 @@ http_query_parameters_parse(const char *string) {
         toklen = strcspn(ptr, "&;");
 
         name_ptr = ptr;
-        name_sz = http_memcspn(ptr, toklen, "=");
+        name_sz = c_memcspn(ptr, toklen, "=");
         if (name_sz == toklen) {
             value_ptr = NULL;
             value_sz = 0;

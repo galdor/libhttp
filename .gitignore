@@ -15,5 +15,4 @@ session.vim
 /tests/chunked-coding
 /tests/path
 /tests/router
-/tests/strings
 /tests/uri

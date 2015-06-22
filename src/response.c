@@ -76,7 +76,7 @@ http_response_parse(const char *data, size_t sz,
     response = http_response_new();
 
     /* Version */
-    toklen = http_memcspn(ptr, len, " ");
+    toklen = c_memcspn(ptr, len, " ");
     if (toklen == len) {
         if (len > HTTP_VERSION_MAX_LENGTH)
             HTTP_FAIL("invalid version");
@@ -90,7 +90,7 @@ http_response_parse(const char *data, size_t sz,
     len -= toklen + 1;
 
     /* Status */
-    toklen = http_memcspn(ptr, len, " ");
+    toklen = c_memcspn(ptr, len, " ");
     if (toklen == len) {
         if (len > 3)
             HTTP_FAIL("invalid status code");
@@ -113,7 +113,7 @@ http_response_parse(const char *data, size_t sz,
     len -= toklen + 1;
 
     /* Reason */
-    toklen = http_memcspn(ptr, len, "\r");
+    toklen = c_memcspn(ptr, len, "\r");
     if (toklen == len) {
         if (len > HTTP_REASON_MAX_LENGTH)
             HTTP_FAIL("reason string too long");

@@ -35,9 +35,6 @@ int http_format_timestamp(char buf[static HTTP_RFC1123_DATE_BUFSZ], size_t,
                           time_t);
 
 /* Strings */
-size_t http_memspn(const void *, size_t, const char *);
-size_t http_memcspn(const void *, size_t, const char *);
-
 void http_string_vector_delete(struct c_ptr_vector *);
 
 /* Base64 */

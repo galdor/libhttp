@@ -120,7 +120,7 @@ http_auth_parse_basic_credentials(const char *data, size_t sz,
     len = sz;
 
     /* User */
-    toklen = http_memcspn(ptr, len, ":");
+    toklen = c_memcspn(ptr, len, ":");
     if (toklen == len) {
         c_set_error("missing password");
         return -1;
