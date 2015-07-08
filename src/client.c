@@ -76,7 +76,7 @@ http_client_set_event_cb(struct http_client *client,
 
 int
 http_client_enable_ssl(struct http_client *client,
-                       const struct io_ssl_cfg *cfg) {
+                       const struct io_ssl_client_cfg *cfg) {
     return io_tcp_client_enable_ssl(client->tcp_client, cfg);
 }
 
@@ -89,7 +89,7 @@ http_client_connect(struct http_client *client,
 int
 http_client_connect_uri(struct http_client *client,
                         const struct http_uri *uri,
-                        const struct io_ssl_cfg *ssl_cfg) {
+                        const struct io_ssl_client_cfg *ssl_cfg) {
     const char *host;
     uint16_t port;
 

@@ -249,11 +249,12 @@ uint16_t http_client_port(const struct http_client *);
 void http_client_set_event_cb(struct http_client *,
                               http_client_event_cb, void *);
 
-int http_client_enable_ssl(struct http_client *, const struct io_ssl_cfg *);
+int http_client_enable_ssl(struct http_client *,
+                           const struct io_ssl_client_cfg *);
 
 int http_client_connect(struct http_client *, const char *, uint16_t);
 int http_client_connect_uri(struct http_client *, const struct http_uri *,
-                            const struct io_ssl_cfg *);
+                            const struct io_ssl_client_cfg *);
 void http_client_disconnect(struct http_client *);
 bool http_client_is_connected(struct http_client *);
 
@@ -325,7 +326,8 @@ void http_server_set_response_cb(struct http_server *,
 void http_server_set_error_cb(struct http_server *,
                               http_server_error_cb, void *);
 
-int http_server_enable_ssl(struct http_server *, const struct io_ssl_cfg *);
+int http_server_enable_ssl(struct http_server *,
+                           const struct io_ssl_server_cfg *);
 
 int http_server_listen(struct http_server *, const char *, uint16_t);
 void http_server_stop(struct http_server *);

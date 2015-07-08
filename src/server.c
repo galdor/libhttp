@@ -416,7 +416,7 @@ http_server_set_error_cb(struct http_server *server,
 
 int
 http_server_enable_ssl(struct http_server *server,
-                       const struct io_ssl_cfg *cfg) {
+                       const struct io_ssl_server_cfg *cfg) {
     return io_tcp_server_enable_ssl(server->tcp_server, cfg);
 }
 

@@ -105,9 +105,9 @@ main(int argc, char **argv) {
     http_client_set_event_cb(httpex.client, httpex_on_client_event, NULL);
 
     if (use_ssl) {
-        struct io_ssl_cfg cfg;
+        struct io_ssl_client_cfg cfg;
 
-        memset(&cfg, 0, sizeof(struct io_ssl_cfg));
+        memset(&cfg, 0, sizeof(struct io_ssl_client_cfg));
         cfg.ca_cert_directory = ca_dir_path;
         cfg.ca_cert_path = ca_path;
 
