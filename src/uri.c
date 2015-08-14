@@ -343,12 +343,22 @@ http_uri_parse(const char *string) {
     }
 
     /* Host */
-    toklen = strcspn(ptr, ":/?#");
+    if (*ptr == '[') {
+        /* IPv6 address */
+
+        ptr++;
+        toklen = strcspn(ptr, "]");
+    } else {
+        toklen = strcspn(ptr, ":/?#");
+    }
+
     uri->host = http_uri_host_decode(ptr, toklen);
     if (!uri->host)
         HTTP_FAIL("cannot decode host: %s", c_get_error());
 
     ptr += toklen;
+    if (*ptr == ']')
+        ptr++;
 
     if (*ptr == ':') {
         size_t port_sz;

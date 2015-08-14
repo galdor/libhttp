@@ -83,6 +83,24 @@ TEST(base) {
     TEST_UINT_EQ(uri->port_number, 80);
     http_uri_delete(uri);
 
+    HTTPT_PARSE_URI("http://127.0.0.1");
+    TEST_STRING_EQ(uri->host, "127.0.0.1");
+    http_uri_delete(uri);
+
+    HTTPT_PARSE_URI("http://[fd14:a10:ca6c::1]");
+    TEST_STRING_EQ(uri->host, "fd14:a10:ca6c::1");
+    http_uri_delete(uri);
+
+    HTTPT_PARSE_URI("http://[fd14:a10:ca6c::1]:80");
+    TEST_STRING_EQ(uri->host, "fd14:a10:ca6c::1");
+    TEST_STRING_EQ(uri->port, "80");
+    TEST_UINT_EQ(uri->port_number, 80);
+    http_uri_delete(uri);
+
+    HTTPT_PARSE_URI("http://[fd14:a10:ca6c::1]/");
+    TEST_STRING_EQ(uri->host, "fd14:a10:ca6c::1");
+    http_uri_delete(uri);
+
     /* User info */
     HTTPT_PARSE_URI("http://foo@a");
     TEST_STRING_EQ(uri->host, "a");
