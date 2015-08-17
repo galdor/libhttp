@@ -19,7 +19,7 @@
 #include <signal.h>
 #include <string.h>
 
-#include "http.h"
+#include "../src/http.h"
 
 struct httpex {
     struct io_base *base;

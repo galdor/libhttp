@@ -17,7 +17,7 @@
 
 #include <utest.h>
 
-#include "internal.h"
+#include "../src/internal.h"
 
 TEST(basic) {
 #define HTTPT_AUTH(string_, user_, password_)                            \

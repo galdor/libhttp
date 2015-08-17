@@ -17,7 +17,7 @@
 
 #include <utest.h>
 
-#include "internal.h"
+#include "../src/internal.h"
 
 TEST(main) {
 #define HTTPT_CHUNKED_CODING(string_, body_sz_, body_)                   \

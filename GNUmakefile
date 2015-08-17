@@ -6,9 +6,12 @@ bindir= $(prefix)/bin
 
 CC= clang
 
+CFLAGS+= $(cflags)
 CFLAGS+= -std=c99
 CFLAGS+= -Wall -Wextra -Werror -Wsign-conversion
 CFLAGS+= -Wno-unused-parameter -Wno-unused-function
+
+LDFLAGS+= $(ldflags)
 
 PANDOC_OPTS= -s --toc --email-obfuscation=none
 
@@ -50,7 +53,6 @@ tests_SRC= $(wildcard tests/*.c)
 tests_OBJ= $(subst .c,.o,$(tests_SRC))
 tests_BIN= $(subst .o,,$(tests_OBJ))
 
-$(tests_BIN): CFLAGS+= -Isrc
 $(tests_BIN): LDFLAGS+= -L.
 $(tests_BIN): LDLIBS+= -lhttp -lio -lcore -lutest
 
@@ -59,7 +61,6 @@ examples_SRC= $(wildcard examples/*.c)
 examples_OBJ= $(subst .c,.o,$(examples_SRC))
 examples_BIN= $(subst .o,,$(examples_OBJ))
 
-$(examples_BIN): CFLAGS+= -Isrc
 $(examples_BIN): LDFLAGS+= -L.
 $(examples_BIN): LDLIBS+= -lhttp -lio -lcore -lssl -lcrypto
 

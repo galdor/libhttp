@@ -17,7 +17,7 @@
 
 #include <utest.h>
 
-#include "internal.h"
+#include "../src/internal.h"
 
 TEST(base) {
     struct http_uri *uri;

@@ -17,7 +17,7 @@
 
 #include <utest.h>
 
-#include "internal.h"
+#include "../src/internal.h"
 
 TEST(base64_decode) {
 #define HTTPT_BASE64_DECODE(string_, result_)                               \
