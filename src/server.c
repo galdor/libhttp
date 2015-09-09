@@ -281,14 +281,12 @@ static void
 http_server_conn_on_request(struct http_server_conn *conn,
                             struct http_request *request,
                             bool *pdisconnected) {
-    struct http_router *router;
     const struct http_route *route;
     struct http_server *server;
     enum http_status status;
     bool do_close;
 
     server = conn->server;
-    router = server->router;
 
     request->conn = conn;
 
@@ -306,7 +304,8 @@ http_server_conn_on_request(struct http_server_conn *conn,
         }
     }
 
-    route = http_router_find_route(router, request->method, request->target_path,
+    route = http_router_find_route(conn->server->router,
+                                   request->method, request->target_path,
                                    &status);
     if (!route) {
         http_reply_error(request, status, NULL, NULL);
@@ -315,13 +314,7 @@ http_server_conn_on_request(struct http_server_conn *conn,
 
     http_request_extract_named_parameters(request, route);
 
-    if (router->pre_cb)
-        router->pre_cb(request, router->pre_cb_arg);
-
     route->cb(request, route->cb_arg);
-
-    if (router->post_cb)
-        router->post_cb(request, router->post_cb_arg);
 
     if (do_close) {
         http_server_conn_disconnect(conn);

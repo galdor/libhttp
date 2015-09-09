@@ -274,12 +274,6 @@ void http_route_delete(struct http_route *);
 
 struct http_router {
     struct c_ptr_vector *routes;
-
-    http_route_const_cb pre_cb;
-    void *pre_cb_arg;
-
-    http_route_const_cb post_cb;
-    void *post_cb_arg;
 };
 
 const struct http_route *

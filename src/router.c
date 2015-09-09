@@ -44,20 +44,6 @@ http_route_delete(struct http_route *route) {
     c_free0(route, sizeof(struct http_route));
 }
 
-void
-http_router_set_pre_cb(struct http_router *router,
-                       http_route_const_cb cb, void *arg) {
-    router->pre_cb = cb;
-    router->pre_cb_arg = arg;
-}
-
-void
-http_router_set_post_cb(struct http_router *router,
-                        http_route_const_cb cb, void *arg) {
-    router->post_cb = cb;
-    router->post_cb_arg = arg;
-}
-
 static int
 http_route_cmp(const void *elt1, const void *elt2) {
     struct http_route *route1, *route2;

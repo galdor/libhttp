@@ -279,15 +279,9 @@ struct http_router;
 struct http_server_conn;
 
 typedef void (*http_route_cb)(struct http_request *, void *);
-typedef void (*http_route_const_cb)(const struct http_request *, void *);
 
 struct http_router *http_router_new(void);
 void http_router_delete(struct http_router *);
-
-void http_router_set_pre_cb(struct http_router *,
-                            http_route_const_cb, void *);
-void http_router_set_post_cb(struct http_router *,
-                             http_route_const_cb, void *);
 
 int http_router_bind(struct http_router *, const char *, enum http_method,
                      http_route_cb, void *);
