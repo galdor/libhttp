@@ -155,7 +155,8 @@ http_status_to_string(enum http_status status) {
         [HTTP_404_NOT_FOUND]                     = "Not Found",
         [HTTP_405_METHOD_NOT_ALLOWED]            = "Method Not Allowed",
         [HTTP_406_NOT_ACCEPTABLE]                = "Not Acceptable",
-        [HTTP_407_PROXY_AUTHENTICATION_REQUIRED] = "Proxy Authentication Required",
+        [HTTP_407_PROXY_AUTHENTICATION_REQUIRED] = "Proxy Authentication "
+                                                   "Required",
         [HTTP_408_REQUEST_TIMEOUT]               = "Request Timeout",
         [HTTP_409_CONFLICT]                      = "Conflict",
         [HTTP_410_GONE]                          = "Gone",
@@ -169,6 +170,12 @@ http_status_to_string(enum http_status status) {
 
         [HTTP_426_UPGRADE_REQUIRED]              = "Upgrade Required",
 
+        [HTTP_428_PRECONDITION_REQUIRED]           = "Precondition Required",
+        [HTTP_429_TOO_MANY_REQUESTS]               = "Too Many Requests",
+
+        [HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE] = "Request Header Fields "
+                                                     "Too Large",
+
         /* 5xx */
         [HTTP_500_INTERNAL_SERVER_ERROR]         = "Internal Server Error",
         [HTTP_501_NOT_IMPLEMENTED]               = "Not Implemented",
@@ -176,6 +183,9 @@ http_status_to_string(enum http_status status) {
         [HTTP_503_SERVICE_UNAVAILABLE]           = "Service Unavailable",
         [HTTP_504_GATEWAY_TIMEOUT]               = "Gateway Timeout",
         [HTTP_505_HTTP_VERSION_NOT_SUPPORTED]    = "HTTP Version Not Supported",
+
+        [HTTP_511_NETWORK_AUTHENTICATION_REQUIRED] = "Network Authentication "
+                                                     "Required",
     };
     static size_t nb_strings = sizeof(strings) / sizeof(strings[0]);
 

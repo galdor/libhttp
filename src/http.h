@@ -136,6 +136,11 @@ enum http_status {
 
     HTTP_426_UPGRADE_REQUIRED              = 426,
 
+    HTTP_428_PRECONDITION_REQUIRED           = 428,
+    HTTP_429_TOO_MANY_REQUESTS               = 429,
+
+    HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
+
     /* 5xx */
     HTTP_500_INTERNAL_SERVER_ERROR         = 500,
     HTTP_501_NOT_IMPLEMENTED               = 501,
@@ -143,6 +148,8 @@ enum http_status {
     HTTP_503_SERVICE_UNAVAILABLE           = 503,
     HTTP_504_GATEWAY_TIMEOUT               = 504,
     HTTP_505_HTTP_VERSION_NOT_SUPPORTED    = 505,
+
+    HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = 511,
 };
 
 const char *http_status_to_string(enum http_status);
