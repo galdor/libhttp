@@ -125,50 +125,51 @@ const char *
 http_status_to_string(enum http_status status) {
     static const char *strings[] = {
         /* 1xx */
-        [HTTP_100_CONTINUE]                      = "Continue",
-        [HTTP_101_SWITCHING_PROTOCOLS]           = "Switching Protocols",
+        [HTTP_100_CONTINUE]                        = "Continue",
+        [HTTP_101_SWITCHING_PROTOCOLS]             = "Switching Protocols",
 
         /* 2xx */
-        [HTTP_200_OK]                            = "OK",
-        [HTTP_201_CREATED]                       = "Created",
-        [HTTP_202_ACCEPTED]                      = "Accepted",
-        [HTTP_203_NON_AUTHORITATIVE_INFORMATION] = "Non-Authoritative Information",
-        [HTTP_204_NO_CONTENT]                    = "No Content",
-        [HTTP_205_RESET_CONTENT]                 = "Reset Content",
-        [HTTP_206_PARTIAL_CONTENT]               = "Partial Content",
+        [HTTP_200_OK]                              = "OK",
+        [HTTP_201_CREATED]                         = "Created",
+        [HTTP_202_ACCEPTED]                        = "Accepted",
+        [HTTP_203_NON_AUTHORITATIVE_INFORMATION]   = "Non-Authoritative "
+                                                     "Information",
+        [HTTP_204_NO_CONTENT]                      = "No Content",
+        [HTTP_205_RESET_CONTENT]                   = "Reset Content",
+        [HTTP_206_PARTIAL_CONTENT]                 = "Partial Content",
 
         /* 3xx */
-        [HTTP_300_MULTIPLE_CHOICES]              = "Multiple Choices",
-        [HTTP_301_MOVED_PERMANENTLY]             = "Moved Permanently",
-        [HTTP_302_FOUND]                         = "Found",
-        [HTTP_303_SEE_OTHER]                     = "See Other",
-        [HTTP_304_NOT_MODIFIED]                  = "Not Modified",
-        [HTTP_305_USE_PROXY]                     = "Use Proxy",
+        [HTTP_300_MULTIPLE_CHOICES]                = "Multiple Choices",
+        [HTTP_301_MOVED_PERMANENTLY]               = "Moved Permanently",
+        [HTTP_302_FOUND]                           = "Found",
+        [HTTP_303_SEE_OTHER]                       = "See Other",
+        [HTTP_304_NOT_MODIFIED]                    = "Not Modified",
+        [HTTP_305_USE_PROXY]                       = "Use Proxy",
 
-        [HTTP_307_TEMPORARY_REDIRECT]            = "Temporary Redirect",
+        [HTTP_307_TEMPORARY_REDIRECT]              = "Temporary Redirect",
 
         /* 4xx */
-        [HTTP_400_BAD_REQUEST]                   = "Bad Request",
-        [HTTP_401_UNAUTHORIZED]                  = "Unauthorized",
-        [HTTP_402_PAYMENT_REQUIRED]              = "Payment Required",
-        [HTTP_403_FORBIDDEN]                     = "Forbidden",
-        [HTTP_404_NOT_FOUND]                     = "Not Found",
-        [HTTP_405_METHOD_NOT_ALLOWED]            = "Method Not Allowed",
-        [HTTP_406_NOT_ACCEPTABLE]                = "Not Acceptable",
-        [HTTP_407_PROXY_AUTHENTICATION_REQUIRED] = "Proxy Authentication "
-                                                   "Required",
-        [HTTP_408_REQUEST_TIMEOUT]               = "Request Timeout",
-        [HTTP_409_CONFLICT]                      = "Conflict",
-        [HTTP_410_GONE]                          = "Gone",
-        [HTTP_411_LENGTH_REQUIRED]               = "Length Required",
-        [HTTP_412_PRECONDITION_FAILED]           = "Precondition Failed",
-        [HTTP_413_PAYLOAD_TOO_LARGE]             = "Payload Too Large",
-        [HTTP_414_URI_TOO_LONG]                  = "URI Too Long",
-        [HTTP_415_UNSUPPORTED_MEDIA_TYPE]        = "Unsupported Media Type",
-        [HTTP_416_RANGE_NOT_SATISFIABLE]         = "Range Not Satisfiable",
-        [HTTP_417_EXPECTATION_FAILED]            = "Expectation Failed",
+        [HTTP_400_BAD_REQUEST]                     = "Bad Request",
+        [HTTP_401_UNAUTHORIZED]                    = "Unauthorized",
+        [HTTP_402_PAYMENT_REQUIRED]                = "Payment Required",
+        [HTTP_403_FORBIDDEN]                       = "Forbidden",
+        [HTTP_404_NOT_FOUND]                       = "Not Found",
+        [HTTP_405_METHOD_NOT_ALLOWED]              = "Method Not Allowed",
+        [HTTP_406_NOT_ACCEPTABLE]                  = "Not Acceptable",
+        [HTTP_407_PROXY_AUTHENTICATION_REQUIRED]   = "Proxy Authentication "
+                                                     "Required",
+        [HTTP_408_REQUEST_TIMEOUT]                 = "Request Timeout",
+        [HTTP_409_CONFLICT]                        = "Conflict",
+        [HTTP_410_GONE]                            = "Gone",
+        [HTTP_411_LENGTH_REQUIRED]                 = "Length Required",
+        [HTTP_412_PRECONDITION_FAILED]             = "Precondition Failed",
+        [HTTP_413_PAYLOAD_TOO_LARGE]               = "Payload Too Large",
+        [HTTP_414_URI_TOO_LONG]                    = "URI Too Long",
+        [HTTP_415_UNSUPPORTED_MEDIA_TYPE]          = "Unsupported Media Type",
+        [HTTP_416_RANGE_NOT_SATISFIABLE]           = "Range Not Satisfiable",
+        [HTTP_417_EXPECTATION_FAILED]              = "Expectation Failed",
 
-        [HTTP_426_UPGRADE_REQUIRED]              = "Upgrade Required",
+        [HTTP_426_UPGRADE_REQUIRED]                = "Upgrade Required",
 
         [HTTP_428_PRECONDITION_REQUIRED]           = "Precondition Required",
         [HTTP_429_TOO_MANY_REQUESTS]               = "Too Many Requests",
@@ -177,12 +178,13 @@ http_status_to_string(enum http_status status) {
                                                      "Too Large",
 
         /* 5xx */
-        [HTTP_500_INTERNAL_SERVER_ERROR]         = "Internal Server Error",
-        [HTTP_501_NOT_IMPLEMENTED]               = "Not Implemented",
-        [HTTP_502_BAD_GATEWAY]                   = "Bad Gateway",
-        [HTTP_503_SERVICE_UNAVAILABLE]           = "Service Unavailable",
-        [HTTP_504_GATEWAY_TIMEOUT]               = "Gateway Timeout",
-        [HTTP_505_HTTP_VERSION_NOT_SUPPORTED]    = "HTTP Version Not Supported",
+        [HTTP_500_INTERNAL_SERVER_ERROR]           = "Internal Server Error",
+        [HTTP_501_NOT_IMPLEMENTED]                 = "Not Implemented",
+        [HTTP_502_BAD_GATEWAY]                     = "Bad Gateway",
+        [HTTP_503_SERVICE_UNAVAILABLE]             = "Service Unavailable",
+        [HTTP_504_GATEWAY_TIMEOUT]                 = "Gateway Timeout",
+        [HTTP_505_HTTP_VERSION_NOT_SUPPORTED]      = "HTTP Version Not "
+                                                     "Supported",
 
         [HTTP_511_NETWORK_AUTHENTICATION_REQUIRED] = "Network Authentication "
                                                      "Required",
