@@ -308,7 +308,7 @@ enum http_server_event {
 typedef void (*http_server_event_cb)(struct http_server *,
                                      enum http_server_event, void *,
                                      void *);
-typedef void (*http_server_request_cb)(struct http_request *, void *);
+typedef void (*http_server_request_cb)(struct http_request *, void *, void *);
 typedef void (*http_server_response_cb)(struct http_response *, void *);
 typedef void (*http_server_error_cb)(struct http_request *,
                                      enum http_status, struct http_headers *,

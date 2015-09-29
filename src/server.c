@@ -295,8 +295,13 @@ http_server_conn_on_request(struct http_server_conn *conn,
 
     c_queue_push(conn->requests, request);
 
+    route = http_router_find_route(conn->server->router,
+                                   request->method, request->target_path,
+                                   &status);
+
     if (server->request_cb) {
-        server->request_cb(request, server->request_cb_arg);
+        server->request_cb(request, server->request_cb_arg,
+                           route ? route->cb_arg : NULL);
 
         if (c_queue_peek(conn->requests) != request) {
             /* A response was sent in the callback (yes, this is a hack) */
@@ -304,9 +309,6 @@ http_server_conn_on_request(struct http_server_conn *conn,
         }
     }
 
-    route = http_router_find_route(conn->server->router,
-                                   request->method, request->target_path,
-                                   &status);
     if (!route) {
         http_reply_error(request, status, NULL, NULL);
         return;
