@@ -317,6 +317,8 @@ struct http_server_conn {
     struct c_queue *responses;
 
     void *private_data;
+
+    bool do_close;
 };
 
 struct http_server_conn *http_server_conn_new(struct http_server *,

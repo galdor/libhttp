@@ -22,7 +22,7 @@
  * ------------------------------------------------------------------------ */
 static void http_server_conn_on_data(struct http_server_conn *);
 static void http_server_conn_on_request(struct http_server_conn *,
-                                        struct http_request *, bool *);
+                                        struct http_request *);
 
 struct http_server_conn *
 http_server_conn_new(struct http_server *server,
@@ -241,7 +241,6 @@ http_server_conn_on_data(struct http_server_conn *conn) {
     while (c_buffer_length(rbuf) > 0) {
         struct http_request *request;
         enum http_status status;
-        bool disconnected;
         size_t sz;
         int ret;
 
@@ -271,16 +270,17 @@ http_server_conn_on_data(struct http_server_conn *conn) {
 
         c_buffer_skip(rbuf, sz);
 
-        http_server_conn_on_request(conn, request, &disconnected);
-        if (disconnected)
+        http_server_conn_on_request(conn, request);
+        if (conn->do_close) {
+            http_server_conn_disconnect(conn);
             return;
+        }
     }
 }
 
 static void
 http_server_conn_on_request(struct http_server_conn *conn,
-                            struct http_request *request,
-                            bool *pdisconnected) {
+                            struct http_request *request) {
     const struct http_route *route;
     struct http_server *server;
     enum http_status status;
@@ -291,17 +291,20 @@ http_server_conn_on_request(struct http_server_conn *conn,
     request->conn = conn;
 
     do_close = http_request_close_connection(request);
-    *pdisconnected = false;
 
     c_queue_push(conn->requests, request);
 
     route = http_router_find_route(conn->server->router,
                                    request->method, request->target_path,
                                    &status);
+    if (route)
+        http_request_extract_named_parameters(request, route);
 
     if (server->request_cb) {
         server->request_cb(request, server->request_cb_arg,
                            route ? route->cb_arg : NULL);
+        if (conn->do_close)
+            return;
 
         if (c_queue_peek(conn->requests) != request) {
             /* A response was sent in the callback (yes, this is a hack) */
@@ -314,15 +317,11 @@ http_server_conn_on_request(struct http_server_conn *conn,
         return;
     }
 
-    http_request_extract_named_parameters(request, route);
-
     route->cb(request, route->cb_arg);
-
-    if (do_close) {
-        http_server_conn_disconnect(conn);
-        *pdisconnected = true;
+    if (conn->do_close)
         return;
-    }
+
+    conn->do_close = do_close;
 }
 
 /* ---------------------------------------------------------------------------
