@@ -222,18 +222,6 @@ int http_response_parse(const char *, size_t, struct http_response **,
 void http_response_finalize(struct http_response *);
 void http_response_to_buffer(const struct http_response *, struct c_buffer *);
 
-void http_response_add_header(struct http_response *, const char *,
-                              const char *);
-void http_response_add_header_nocopy(struct http_response *,
-                                     const char *, char *);
-void http_response_set_header(struct http_response *, const char *,
-                              const char *);
-void http_response_set_header_vprintf(struct http_response *, const char *,
-                                      const char *, va_list);
-void http_response_set_header_printf(struct http_response *, const char *,
-                                     const char *, ...)
-    __attribute__ ((format(printf, 3, 4)));
-
 bool http_response_can_have_body(const struct http_response *);
 
 /* Client */

@@ -228,6 +228,18 @@ const char *http_response_nth_header(const struct http_response *, size_t,
                                      const char **);
 const char *http_response_header(const struct http_response *, const char *);
 
+void http_response_add_header(struct http_response *, const char *,
+                              const char *);
+void http_response_add_header_nocopy(struct http_response *,
+                                     const char *, char *);
+void http_response_set_header(struct http_response *, const char *,
+                              const char *);
+void http_response_set_header_vprintf(struct http_response *, const char *,
+                                      const char *, va_list);
+void http_response_set_header_printf(struct http_response *, const char *,
+                                     const char *, ...)
+    __attribute__ ((format(printf, 3, 4)));
+
 void *http_response_body(const struct http_response *, size_t *);
 
 /* Client */
