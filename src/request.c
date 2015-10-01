@@ -283,6 +283,11 @@ http_request_header(const struct http_request *request, const char *name) {
     return http_headers_header(request->headers, name);
 }
 
+size_t
+http_request_body_size(const struct http_request *request) {
+    return request->body_sz;
+}
+
 void *
 http_request_body(const struct http_request *request, size_t *psz) {
     if (psz)

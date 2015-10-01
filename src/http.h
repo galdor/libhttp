@@ -198,6 +198,7 @@ const char *http_request_nth_header(const struct http_request *, size_t,
                                     const char **);
 const char *http_request_header(const struct http_request *, const char *);
 
+size_t http_request_body_size(const struct http_request *);
 void *http_request_body(const struct http_request *, size_t *);
 
 const char *http_request_named_parameter(const struct http_request *,
