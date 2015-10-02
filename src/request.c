@@ -398,7 +398,7 @@ http_request_accepted_media_types(const struct http_request *request) {
 
 int
 http_request_accepts_media_type(const struct http_request *request,
-                                const char *media_type_string) {
+                                const char *type, const char *subtype) {
     struct c_ptr_vector *entries;
     const char *string;
 
@@ -427,11 +427,18 @@ http_request_accepts_media_type(const struct http_request *request,
             return -1;
         }
 
-        if (strcmp(http_media_type_base_string(media_type),
-                   media_type_string) == 0) {
-            http_media_type_delete(media_type);
-            http_string_vector_delete(entries);
-            return 1;
+        if (strcmp(media_type->type, "*") == 0
+         || strcmp(media_type->type, type) == 0) {
+            /* Type match */
+
+            if (strcmp(media_type->subtype, "*") == 0
+             || strcmp(media_type->subtype, subtype) == 0) {
+                /* Subtype match */
+
+                http_media_type_delete(media_type);
+                http_string_vector_delete(entries);
+                return 1;
+            }
         }
 
         http_media_type_delete(media_type);

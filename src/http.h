@@ -252,7 +252,8 @@ const char *http_request_query_parameter(const struct http_request *,
 
 struct c_ptr_vector *
 http_request_accepted_media_types(const struct http_request *);
-int http_request_accepts_media_type(const struct http_request *, const char *);
+int http_request_accepts_media_type(const struct http_request *,
+                                    const char *, const char *);
 
 /* ---------------------------------------------------------------------------
  *  Response
