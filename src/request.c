@@ -356,95 +356,103 @@ http_request_query_parameter(const struct http_request *request,
 
 struct c_ptr_vector *
 http_request_accepted_media_types(const struct http_request *request) {
-    struct c_ptr_vector *entries, *media_types;
-    const char *string;
+    struct c_ptr_vector *media_types;
 
     media_types = c_ptr_vector_new();
 
-    string = http_request_header(request, "Accept");
-    if (!string)
-        return media_types;
+    for (size_t h = 0; h < http_headers_nb_headers(request->headers); h++) {
+        struct c_ptr_vector *entries;
+        const char *name, *value;
 
-    entries = http_list_parse(string);
-    if (!entries) {
-        c_set_error("invalid Accept header: %s", c_get_error());
-        c_ptr_vector_delete(media_types);
-        return NULL;
-    }
+        name = http_headers_nth_header(request->headers, h, &value);
+        if (strcasecmp(name, "accept") != 0)
+            continue;
 
-    for (size_t i = 0; i < c_ptr_vector_length(entries); i++) {
-        struct http_media_type *media_type;
-        const char *entry;
-
-        entry = c_ptr_vector_entry(entries, i);
-
-        media_type = http_media_type_parse(entry);
-        if (!media_type) {
-            c_set_error("invalid media type: %s", c_get_error());
-
-            http_string_vector_delete(entries);
-            for (size_t j = 0; j < c_ptr_vector_length(media_types); j++)
-                http_media_type_delete(c_ptr_vector_entry(media_types, j));
+        entries = http_list_parse(value);
+        if (!entries) {
+            c_set_error("invalid Accept header: %s", c_get_error());
             c_ptr_vector_delete(media_types);
             return NULL;
         }
 
-        c_ptr_vector_append(media_types, media_type);
+        for (size_t i = 0; i < c_ptr_vector_length(entries); i++) {
+            struct http_media_type *media_type;
+            const char *entry;
+
+            entry = c_ptr_vector_entry(entries, i);
+
+            media_type = http_media_type_parse(entry);
+            if (!media_type) {
+                c_set_error("invalid media type: %s", c_get_error());
+
+                http_string_vector_delete(entries);
+                for (size_t j = 0; j < c_ptr_vector_length(media_types); j++)
+                    http_media_type_delete(c_ptr_vector_entry(media_types, j));
+                c_ptr_vector_delete(media_types);
+                return NULL;
+            }
+
+            c_ptr_vector_append(media_types, media_type);
+        }
+
+        http_string_vector_delete(entries);
     }
 
-    http_string_vector_delete(entries);
     return media_types;
 }
 
 int
 http_request_accepts_media_type(const struct http_request *request,
                                 const char *type, const char *subtype) {
-    struct c_ptr_vector *entries;
-    const char *string;
+    for (size_t h = 0; h < http_headers_nb_headers(request->headers); h++) {
+        struct c_ptr_vector *entries;
+        const char *name, *value;
 
-    string = http_request_header(request, "Accept");
-    if (!string)
-        return 1;
+        name = http_headers_nth_header(request->headers, h, &value);
+        if (strcasecmp(name, "accept") != 0)
+            continue;
 
-    entries = http_list_parse(string);
-    if (!entries) {
-        c_set_error("invalid Accept header: %s", c_get_error());
-        return -1;
-    }
-
-    for (size_t i = 0; i < c_ptr_vector_length(entries); i++) {
-        struct http_media_type *media_type;
-        const char *entry;
-
-        entry = c_ptr_vector_entry(entries, i);
-
-        media_type = http_media_type_parse(entry);
-        if (!media_type) {
-            c_set_error("invalid media type in Accept header: %s",
-                        c_get_error());
-
-            http_string_vector_delete(entries);
+        entries = http_list_parse(value);
+        if (!entries) {
+            c_set_error("invalid Accept header: %s", c_get_error());
             return -1;
         }
 
-        if (strcmp(media_type->type, "*") == 0
-         || strcmp(media_type->type, type) == 0) {
-            /* Type match */
+        for (size_t i = 0; i < c_ptr_vector_length(entries); i++) {
+            struct http_media_type *media_type;
+            const char *entry;
 
-            if (strcmp(media_type->subtype, "*") == 0
-             || strcmp(media_type->subtype, subtype) == 0) {
-                /* Subtype match */
+            entry = c_ptr_vector_entry(entries, i);
 
-                http_media_type_delete(media_type);
+            media_type = http_media_type_parse(entry);
+            if (!media_type) {
+                c_set_error("invalid media type in Accept header: %s",
+                            c_get_error());
+
                 http_string_vector_delete(entries);
-                return 1;
+                return -1;
             }
+
+            if (strcmp(media_type->type, "*") == 0
+             || strcmp(media_type->type, type) == 0) {
+                /* Type match */
+
+                if (strcmp(media_type->subtype, "*") == 0
+                 || strcmp(media_type->subtype, subtype) == 0) {
+                    /* Subtype match */
+
+                    http_media_type_delete(media_type);
+                    http_string_vector_delete(entries);
+                    return 1;
+                }
+            }
+
+            http_media_type_delete(media_type);
         }
 
-        http_media_type_delete(media_type);
+        http_string_vector_delete(entries);
     }
 
-    http_string_vector_delete(entries);
     return 0;
 }
 
