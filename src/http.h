@@ -21,7 +21,9 @@
 #include <core.h>
 #include <io.h>
 
-/* Path */
+/* ---------------------------------------------------------------------------
+ *  Path
+ * ------------------------------------------------------------------------ */
 struct http_path *http_path_new(void);
 void http_path_delete(struct http_path *);
 
@@ -33,7 +35,9 @@ const char *http_path_segment(const struct http_path *, size_t);
 void http_path_add_segment(struct http_path *, const char *);
 void http_path_add_segment2(struct http_path *, const char *, size_t);
 
-/* URI */
+/* ---------------------------------------------------------------------------
+ *  URI
+ * ------------------------------------------------------------------------ */
 struct http_uri *http_uri_new(void);
 void http_uri_delete(struct http_uri *);
 
@@ -69,7 +73,9 @@ bool http_uri_has_query_parameter(const struct http_uri *, const char *,
                                   const char **);
 const char *http_uri_query_parameter(const struct http_uri *, const char *);
 
-/* Protocol */
+/* ---------------------------------------------------------------------------
+ *  Protocol
+ * ------------------------------------------------------------------------ */
 enum http_version {
     HTTP_1_0,
     HTTP_1_1,
@@ -156,14 +162,18 @@ const char *http_status_to_string(enum http_status);
 
 bool http_status_is_success(enum http_status);
 
-/* Authentication */
+/* ---------------------------------------------------------------------------
+ *  Authentication
+ * ------------------------------------------------------------------------ */
 enum http_auth_scheme {
     HTTP_AUTH_SCHEME_BASIC,
 };
 
 char *http_generate_basic_auth_header(const char *, const char *);
 
-/* Headers */
+/* ---------------------------------------------------------------------------
+ *  Headers
+ * ------------------------------------------------------------------------ */
 struct http_headers *http_headers_new(void);
 void http_headers_delete(struct http_headers *);
 
@@ -184,7 +194,9 @@ void http_headers_set_printf(struct http_headers *, const char *,
 
 void http_headers_merge_nocopy(struct http_headers *, struct http_headers *);
 
-/* Request */
+/* ---------------------------------------------------------------------------
+ *  Request
+ * ------------------------------------------------------------------------ */
 struct http_request;
 
 enum http_method http_request_method(const struct http_request *);
@@ -217,7 +229,9 @@ bool http_request_has_query_parameter(const struct http_request *,
 const char *http_request_query_parameter(const struct http_request *,
                                          const char *);
 
-/* Response */
+/* ---------------------------------------------------------------------------
+ *  Response
+ * ------------------------------------------------------------------------ */
 struct http_response;
 
 struct http_request *http_response_request(const struct http_response *);
@@ -243,7 +257,9 @@ void http_response_set_header_printf(struct http_response *, const char *,
 
 void *http_response_body(const struct http_response *, size_t *);
 
-/* Client */
+/* ---------------------------------------------------------------------------
+ *  Client
+ * ------------------------------------------------------------------------ */
 struct http_client;
 
 enum http_client_event {
@@ -294,7 +310,9 @@ void http_client_request_string(struct http_client *, enum http_method,
                                 const char *,
                                 http_client_response_cb, void *);
 
-/* Router */
+/* ---------------------------------------------------------------------------
+ *  Router
+ * ------------------------------------------------------------------------ */
 struct http_router;
 struct http_server_conn;
 
@@ -306,7 +324,9 @@ void http_router_delete(struct http_router *);
 int http_router_bind(struct http_router *, const char *, enum http_method,
                      http_route_cb, void *);
 
-/* Server */
+/* ---------------------------------------------------------------------------
+ *  Server
+ * ------------------------------------------------------------------------ */
 struct http_server;
 
 enum http_server_event {
@@ -352,7 +372,9 @@ int http_server_enable_ssl(struct http_server *,
 int http_server_listen(struct http_server *, const char *, uint16_t);
 void http_server_stop(struct http_server *);
 
-/* Server connection */
+/* ---------------------------------------------------------------------------
+ *  Server connection
+ * ------------------------------------------------------------------------ */
 const struct io_address *
 http_server_conn_address(const struct http_server_conn *);
 

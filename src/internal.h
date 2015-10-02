@@ -26,7 +26,9 @@
 
 #include "http.h"
 
-/* Time */
+/* ---------------------------------------------------------------------------
+ *  Time
+ * ------------------------------------------------------------------------ */
 #define HTTP_RFC1123_DATE_BUFSZ 64
 
 void http_format_date(char [static HTTP_RFC1123_DATE_BUFSZ], size_t,
@@ -34,22 +36,30 @@ void http_format_date(char [static HTTP_RFC1123_DATE_BUFSZ], size_t,
 int http_format_timestamp(char buf[static HTTP_RFC1123_DATE_BUFSZ], size_t,
                           time_t);
 
-/* Strings */
+/* ---------------------------------------------------------------------------
+ *  Strings
+ * ------------------------------------------------------------------------ */
 void http_string_vector_delete(struct c_ptr_vector *);
 
-/* Base64 */
+/* ---------------------------------------------------------------------------
+ *  Base64
+ * ------------------------------------------------------------------------ */
 uint8_t *http_base64_decode(const void *, size_t, size_t *);
 uint8_t *http_base64_encode(const void *, size_t, size_t *);
 
 char *http_base64_decode_string(const char *);
 char *http_base64_encode_string(const char *);
 
-/* Path */
+/* ---------------------------------------------------------------------------
+ *  Path
+ * ------------------------------------------------------------------------ */
 struct http_path {
     struct c_ptr_vector *segments;
 };
 
-/* Query parameter */
+/* ---------------------------------------------------------------------------
+ *  Query parameter
+ * ------------------------------------------------------------------------ */
 struct http_query_parameter {
     char *name;
     char *value;
@@ -60,7 +70,9 @@ void http_query_parameter_free(struct http_query_parameter *);
 
 struct c_vector *http_query_parameters_parse(const char *);
 
-/* URI */
+/* ---------------------------------------------------------------------------
+ *  URI
+ * ------------------------------------------------------------------------ */
 struct http_uri {
     char *scheme;
     char *user;
@@ -75,7 +87,9 @@ struct http_uri {
     struct c_vector *query_parameters;
 };
 
-/* Protocol */
+/* ---------------------------------------------------------------------------
+ *  Protocol
+ * ------------------------------------------------------------------------ */
 #define HTTP_METHOD_MAX_LENGTH 7 /* OPTIONS */
 
 int http_method_parse(const char *, size_t, enum http_method *);
@@ -88,7 +102,9 @@ int http_version_parse(const char *, size_t, enum http_version *);
 
 struct c_ptr_vector *http_list_parse(const char *);
 
-/* Authentication */
+/* ---------------------------------------------------------------------------
+ *  Authentication
+ * ------------------------------------------------------------------------ */
 struct http_auth {
     enum http_auth_scheme scheme;
 
@@ -105,7 +121,9 @@ void http_auth_delete(struct http_auth *);
 
 struct http_auth *http_auth_parse_authorization(const char *);
 
-/* Header */
+/* ---------------------------------------------------------------------------
+ *  Header
+ * ------------------------------------------------------------------------ */
 #define HTTP_HEADER_NAME_MAX_LENGTH 256
 #define HTTP_HEADER_VALUE_MAX_LENGTH 2048
 
@@ -121,10 +139,14 @@ struct http_headers {
 int http_headers_parse(const char *, size_t, struct http_headers **,
                        enum http_status *, size_t *);
 
-/* Chunked data */
+/* ---------------------------------------------------------------------------
+ *  Chunked data
+ * ------------------------------------------------------------------------ */
 int http_chunked_data_parse(const void *, size_t, void **, size_t *, size_t *);
 
-/* Request */
+/* ---------------------------------------------------------------------------
+ *  Request
+ * ------------------------------------------------------------------------ */
 #define HTTP_REQUEST_TARGET_MAX_LENGTH 2048
 #define HTTP_REQUEST_MAX_CONTENT_LENGTH (64 * 1024 * 1024)
 
@@ -192,7 +214,9 @@ void http_request_set_header_printf(struct http_request *, const char *,
 bool http_request_can_have_body(const struct http_request *);
 bool http_request_close_connection(const struct http_request *);
 
-/* Response */
+/* ---------------------------------------------------------------------------
+ *  Response
+ * ------------------------------------------------------------------------ */
 #define HTTP_RESPONSE_MAX_CONTENT_LENGTH (64 * 1024 * 1024)
 
 struct http_response {
@@ -224,7 +248,9 @@ void http_response_to_buffer(const struct http_response *, struct c_buffer *);
 
 bool http_response_can_have_body(const struct http_response *);
 
-/* Client */
+/* ---------------------------------------------------------------------------
+ *  Client
+ * ------------------------------------------------------------------------ */
 struct http_client {
     struct io_base *io_base;
     struct io_tcp_client *tcp_client;
@@ -247,7 +273,9 @@ void http_client_write_request(struct http_client *,
 void http_client_send_request(struct http_client *, struct http_request *,
                               http_client_response_cb, void *);
 
-/* Router */
+/* ---------------------------------------------------------------------------
+ *  Router
+ * ------------------------------------------------------------------------ */
 struct http_route {
     char *path_string;
     struct http_path *path;
@@ -269,7 +297,9 @@ http_router_find_route(const struct http_router *,
                        enum http_method, const struct http_path *,
                        enum http_status *);
 
-/* Server */
+/* ---------------------------------------------------------------------------
+ *  Server
+ * ------------------------------------------------------------------------ */
 struct http_server {
     struct io_base *io_base;
     struct io_tcp_server *tcp_server;
@@ -296,7 +326,9 @@ void http_server_trace(struct http_server *, const char *, ...)
 void http_server_error(struct http_server *, const char *, ...)
     __attribute__ ((format(printf, 2, 3)));
 
-/* Server connection */
+/* ---------------------------------------------------------------------------
+ *  Server connection
+ * ------------------------------------------------------------------------ */
 struct http_server_conn {
     struct http_server *server;
     struct io_tcp_server_conn *tcp_conn;
