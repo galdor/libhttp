@@ -13,6 +13,7 @@ session.vim
 /tests/auth
 /tests/base64
 /tests/chunked-coding
+/tests/mime
 /tests/path
 /tests/router
 /tests/uri

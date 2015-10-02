@@ -19,6 +19,7 @@
 #define LIBHTTP_INTERNAL_H
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
@@ -85,6 +86,19 @@ struct http_uri {
     char *fragment;
 
     struct c_vector *query_parameters;
+};
+
+/* ---------------------------------------------------------------------------
+ *  MIME
+ * ------------------------------------------------------------------------ */
+struct http_media_type {
+    char *string;
+    char *base_string;
+
+    char *type;    /* case insensitive */
+    char *subtype; /* case insensitive */
+
+    struct c_hash_table *parameters;
 };
 
 /* ---------------------------------------------------------------------------

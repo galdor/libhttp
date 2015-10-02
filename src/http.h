@@ -74,6 +74,27 @@ bool http_uri_has_query_parameter(const struct http_uri *, const char *,
 const char *http_uri_query_parameter(const struct http_uri *, const char *);
 
 /* ---------------------------------------------------------------------------
+ *  MIME
+ * ------------------------------------------------------------------------ */
+struct http_media_type *http_media_type_new(const char *, const char *);
+void http_media_type_delete(struct http_media_type *);
+
+struct http_media_type *http_media_type_parse(const char *);
+
+const char *http_media_type_string(const struct http_media_type *);
+const char *http_media_type_base_string(const struct http_media_type *);
+const char *http_media_type_type(const struct http_media_type *);
+const char *http_media_type_subtype(const struct http_media_type *);
+
+const char *http_media_type_parameter(const struct http_media_type *,
+                                      const char *);
+void http_media_type_set_parameter(struct http_media_type *,
+                                   const char *, const char *);
+void
+http_media_type_set_parameter_nocopy(struct http_media_type *,
+                                     const char *, char *);
+
+/* ---------------------------------------------------------------------------
  *  Protocol
  * ------------------------------------------------------------------------ */
 enum http_version {
