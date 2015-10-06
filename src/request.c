@@ -404,6 +404,10 @@ http_request_accepted_media_types(const struct http_request *request) {
 int
 http_request_accepts_media_type(const struct http_request *request,
                                 const char *type, const char *subtype) {
+    int nb_accept_headers;
+
+    nb_accept_headers = 0;
+
     for (size_t h = 0; h < http_headers_nb_headers(request->headers); h++) {
         struct c_ptr_vector *entries;
         const char *name, *value;
@@ -411,6 +415,8 @@ http_request_accepts_media_type(const struct http_request *request,
         name = http_headers_nth_header(request->headers, h, &value);
         if (strcasecmp(name, "accept") != 0)
             continue;
+
+        nb_accept_headers++;
 
         entries = http_list_parse(value);
         if (!entries) {
@@ -452,6 +458,9 @@ http_request_accepts_media_type(const struct http_request *request,
 
         http_string_vector_delete(entries);
     }
+
+    if (nb_accept_headers == 0)
+        return 1;
 
     return 0;
 }
