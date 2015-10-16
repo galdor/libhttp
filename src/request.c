@@ -38,7 +38,7 @@ http_request_delete(struct http_request *request) {
         return;
 
     c_free(request->target);
-    http_uri_delete(request->target_uri);
+    http_url_delete(request->target_url);
     http_path_delete(request->target_path);
 
     http_headers_delete(request->headers);
@@ -121,22 +121,22 @@ http_request_parse(const char *data, size_t sz,
         if (request->method != HTTP_OPTIONS)
             HTTP_FAIL(HTTP_400_BAD_REQUEST, "invalid asterisk target");
     } else {
-        struct http_uri *uri;
+        struct http_url *url;
         struct http_path *path;
 
-        uri = http_uri_parse(request->target);
-        if (!uri) {
+        url = http_url_parse(request->target);
+        if (!url) {
             HTTP_FAIL(HTTP_400_BAD_REQUEST, "invalid request target: %s",
                       c_get_error());
         }
 
-        path = http_path_parse(uri->path);
+        path = http_path_parse(url->path);
         if (!path) {
             HTTP_FAIL(HTTP_400_BAD_REQUEST, "invalid request target path: %s",
                       c_get_error());
         }
 
-        request->target_uri = uri;
+        request->target_url = url;
         request->target_path = path;
     }
 
@@ -216,9 +216,9 @@ http_request_method(const struct http_request *request) {
     return request->method;
 }
 
-struct http_uri *
-http_request_target_uri(const struct http_request *request) {
-    return request->target_uri;
+struct http_url *
+http_request_target_url(const struct http_request *request) {
+    return request->target_url;
 }
 
 struct http_server_conn *
@@ -333,25 +333,25 @@ http_request_basic_auth_data(const struct http_request *request,
 
 size_t
 http_request_nb_query_parameters(const struct http_request *request) {
-    return http_uri_nb_query_parameters(request->target_uri);
+    return http_url_nb_query_parameters(request->target_url);
 }
 
 const char *
 http_request_nth_query_parameter(const struct http_request *request,
                                  size_t idx, const char **pvalue) {
-    return http_uri_nth_query_parameter(request->target_uri, idx, pvalue);
+    return http_url_nth_query_parameter(request->target_url, idx, pvalue);
 }
 
 bool
 http_request_has_query_parameter(const struct http_request *request,
                                  const char *name, const char **pvalue) {
-    return http_uri_has_query_parameter(request->target_uri, name, pvalue);
+    return http_url_has_query_parameter(request->target_url, name, pvalue);
 }
 
 const char *
 http_request_query_parameter(const struct http_request *request,
                              const char *name) {
-    return http_uri_query_parameter(request->target_uri, name);
+    return http_url_query_parameter(request->target_url, name);
 }
 
 struct c_ptr_vector *
@@ -632,15 +632,15 @@ http_request_extract_named_parameters(struct http_request *request,
 void
 http_request_finalize(struct http_request *request,
                       struct http_client *client) {
-    struct http_uri *uri;
+    struct http_url *url;
     const char *host;
     uint16_t port;
 
-    uri = request->target_uri;
+    url = request->target_url;
 
     /* Host */
-    host = uri->host ? uri->host : http_client_host(client);
-    port = uri->port ? uri->port_number : http_client_port(client);
+    host = url->host ? url->host : http_client_host(client);
+    port = url->port ? url->port_number : http_client_port(client);
 
     http_request_set_header_printf(request, "Host", "%s:%u", host, port);
 
@@ -659,7 +659,7 @@ http_request_to_buffer(const struct http_request *request,
     assert(method_string);
     c_buffer_add_printf(buf, "%s ", method_string);
 
-    http_uri_to_buffer(request->target_uri, buf);
+    http_url_to_buffer(request->target_url, buf);
 
     version_string = http_version_to_string(request->version);
     assert(version_string);

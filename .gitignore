@@ -8,7 +8,7 @@ session.vim
 
 /examples/http-client
 /examples/http-server
-/examples/uri
+/examples/url
 
 /tests/auth
 /tests/base64
@@ -16,4 +16,4 @@ session.vim
 /tests/mime
 /tests/path
 /tests/router
-/tests/uri
+/tests/url

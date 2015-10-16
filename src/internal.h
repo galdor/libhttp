@@ -74,7 +74,7 @@ struct c_vector *http_query_parameters_parse(const char *);
 /* ---------------------------------------------------------------------------
  *  URI
  * ------------------------------------------------------------------------ */
-struct http_uri {
+struct http_url {
     char *scheme;
     char *user;
     char *password;
@@ -176,7 +176,7 @@ struct http_request {
     enum http_version version;
 
     char *target;
-    struct http_uri *target_uri;
+    struct http_url *target_url;
 
     struct http_headers *headers;
 

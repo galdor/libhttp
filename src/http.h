@@ -36,42 +36,42 @@ void http_path_add_segment(struct http_path *, const char *);
 void http_path_add_segment2(struct http_path *, const char *, size_t);
 
 /* ---------------------------------------------------------------------------
- *  URI
+ *  URL
  * ------------------------------------------------------------------------ */
-struct http_uri *http_uri_new(void);
-void http_uri_delete(struct http_uri *);
+struct http_url *http_url_new(void);
+void http_url_delete(struct http_url *);
 
-struct http_uri *http_uri_parse(const char *);
-void http_uri_to_buffer(const struct http_uri *, struct c_buffer *);
-char *http_uri_to_string(const struct http_uri *);
+struct http_url *http_url_parse(const char *);
+void http_url_to_buffer(const struct http_url *, struct c_buffer *);
+char *http_url_to_string(const struct http_url *);
 
-struct http_uri *http_uri_clone(const struct http_uri *);
+struct http_url *http_url_clone(const struct http_url *);
 
-const char *http_uri_scheme(const struct http_uri *);
-const char *http_uri_user(const struct http_uri *);
-const char *http_uri_password(const struct http_uri *);
-const char *http_uri_host(const struct http_uri *);
-const char *http_uri_port(const struct http_uri *);
-uint16_t http_uri_port_number(const struct http_uri *);
-const char *http_uri_path(const struct http_uri *);
-const char *http_uri_query(const struct http_uri *);
-const char *http_uri_fragment(const struct http_uri *);
+const char *http_url_scheme(const struct http_url *);
+const char *http_url_user(const struct http_url *);
+const char *http_url_password(const struct http_url *);
+const char *http_url_host(const struct http_url *);
+const char *http_url_port(const struct http_url *);
+uint16_t http_url_port_number(const struct http_url *);
+const char *http_url_path(const struct http_url *);
+const char *http_url_query(const struct http_url *);
+const char *http_url_fragment(const struct http_url *);
 
-void http_uri_set_scheme(struct http_uri *, const char *);
-void http_uri_set_user(struct http_uri *, const char *);
-void http_uri_set_password(struct http_uri *, const char *);
-void http_uri_set_host(struct http_uri *, const char *);
-void http_uri_set_port(struct http_uri *, uint16_t);
-void http_uri_set_path(struct http_uri *, const char *);
-void http_uri_set_query(struct http_uri *, const char *);
-void http_uri_set_fragment(struct http_uri *, const char *);
+void http_url_set_scheme(struct http_url *, const char *);
+void http_url_set_user(struct http_url *, const char *);
+void http_url_set_password(struct http_url *, const char *);
+void http_url_set_host(struct http_url *, const char *);
+void http_url_set_port(struct http_url *, uint16_t);
+void http_url_set_path(struct http_url *, const char *);
+void http_url_set_query(struct http_url *, const char *);
+void http_url_set_fragment(struct http_url *, const char *);
 
-size_t http_uri_nb_query_parameters(const struct http_uri *);
-const char *http_uri_nth_query_parameter(const struct http_uri *, size_t,
+size_t http_url_nb_query_parameters(const struct http_url *);
+const char *http_url_nth_query_parameter(const struct http_url *, size_t,
                                          const char **);
-bool http_uri_has_query_parameter(const struct http_uri *, const char *,
+bool http_url_has_query_parameter(const struct http_url *, const char *,
                                   const char **);
-const char *http_uri_query_parameter(const struct http_uri *, const char *);
+const char *http_url_query_parameter(const struct http_url *, const char *);
 
 /* ---------------------------------------------------------------------------
  *  MIME
@@ -221,7 +221,7 @@ void http_headers_merge_nocopy(struct http_headers *, struct http_headers *);
 struct http_request;
 
 enum http_method http_request_method(const struct http_request *);
-struct http_uri *http_request_target_uri(const struct http_request *);
+struct http_url *http_request_target_url(const struct http_request *);
 
 struct http_server_conn *http_request_server_conn(const struct http_request *);
 
@@ -315,24 +315,24 @@ int http_client_enable_ssl(struct http_client *,
                            const struct io_ssl_client_cfg *);
 
 int http_client_connect(struct http_client *, const char *, uint16_t);
-int http_client_connect_uri(struct http_client *, const struct http_uri *,
+int http_client_connect_url(struct http_client *, const struct http_url *,
                             const struct io_ssl_client_cfg *);
 void http_client_disconnect(struct http_client *);
 bool http_client_is_connected(struct http_client *);
 
 void http_client_request_empty(struct http_client *, enum http_method,
-                               struct http_uri *, struct http_headers *,
+                               struct http_url *, struct http_headers *,
                                http_client_response_cb, void *);
 void http_client_request_data(struct http_client *, enum http_method,
-                              struct http_uri *, struct http_headers *,
+                              struct http_url *, struct http_headers *,
                               const void *, size_t,
                               http_client_response_cb, void *);
 void http_client_request_data_nocopy(struct http_client *, enum http_method,
-                                     struct http_uri *, struct http_headers *,
+                                     struct http_url *, struct http_headers *,
                                      void *, size_t,
                                      http_client_response_cb, void *);
 void http_client_request_string(struct http_client *, enum http_method,
-                                struct http_uri *, struct http_headers *,
+                                struct http_url *, struct http_headers *,
                                 const char *,
                                 http_client_response_cb, void *);
 

@@ -17,10 +17,10 @@
 
 #include "internal.h"
 
-static bool http_uri_is_hex_digit(char);
-static int http_uri_hex_digit_decode(char, int *);
-static int http_uri_pct_decode(const char *, char *);
-static void http_uri_pct_encode(char, char *);
+static bool http_url_is_hex_digit(char);
+static int http_url_hex_digit_decode(char, int *);
+static int http_url_pct_decode(const char *, char *);
+static void http_url_pct_encode(char, char *);
 
 /* ---------------------------------------------------------------------------
  *  Query parameter
@@ -126,7 +126,7 @@ http_query_parameter_decode(const char *data, size_t sz) {
 
             c_buffer_add(buf, start, (size_t)(ptr - start));
 
-            if (http_uri_pct_decode(ptr, &c) == -1)
+            if (http_url_pct_decode(ptr, &c) == -1)
                 goto error;
 
             c_buffer_add(buf, &c, 1);
@@ -189,7 +189,7 @@ http_query_parameter_encode(const char *string, struct c_buffer *buf) {
          || *iptr == '-' || *iptr == '.' || *iptr == '_') {
             *optr++ = *iptr++;
         } else {
-            http_uri_pct_encode(*iptr, optr);
+            http_url_pct_encode(*iptr, optr);
             iptr += 1;
             optr += 3;
         }
@@ -221,60 +221,60 @@ http_query_parameters_to_buffer(const struct c_vector *parameters,
 /* ---------------------------------------------------------------------------
  *  URI
  * ------------------------------------------------------------------------ */
-static bool http_uri_is_scheme_first_char(char);
-static bool http_uri_is_scheme_char(char);
-static bool http_uri_is_sub_delims(char);
-static bool http_uri_is_unreserved(char);
+static bool http_url_is_scheme_first_char(char);
+static bool http_url_is_scheme_char(char);
+static bool http_url_is_sub_delims(char);
+static bool http_url_is_unreserved(char);
 
-static char *http_uri_userinfo_decode(const char *, size_t);
-static char *http_uri_host_decode(const char *, size_t);
-static char *http_uri_path_decode(const char *, size_t);
-static char *http_uri_query_decode(const char *, size_t);
-static char *http_uri_fragment_decode(const char *, size_t);
+static char *http_url_userinfo_decode(const char *, size_t);
+static char *http_url_host_decode(const char *, size_t);
+static char *http_url_path_decode(const char *, size_t);
+static char *http_url_query_decode(const char *, size_t);
+static char *http_url_fragment_decode(const char *, size_t);
 
-static void http_uri_encode(const char *, struct c_buffer *);
-static void http_uri_path_encode(const char *, struct c_buffer *);
-static void http_uri_fragment_encode(const char *, struct c_buffer *);
+static void http_url_encode(const char *, struct c_buffer *);
+static void http_url_path_encode(const char *, struct c_buffer *);
+static void http_url_fragment_encode(const char *, struct c_buffer *);
 
-struct http_uri *
-http_uri_new(void) {
-    struct http_uri *uri;
+struct http_url *
+http_url_new(void) {
+    struct http_url *url;
 
-    uri = c_malloc0(sizeof(struct http_uri));
+    url = c_malloc0(sizeof(struct http_url));
 
-    return uri;
+    return url;
 }
 
 void
-http_uri_delete(struct http_uri *uri) {
-    if (!uri)
+http_url_delete(struct http_url *url) {
+    if (!url)
         return;
 
-    c_free(uri->scheme);
-    c_free(uri->user);
-    c_free(uri->password);
-    c_free(uri->host);
-    c_free(uri->port);
-    c_free(uri->path);
-    c_free(uri->query);
-    c_free(uri->fragment);
+    c_free(url->scheme);
+    c_free(url->user);
+    c_free(url->password);
+    c_free(url->host);
+    c_free(url->port);
+    c_free(url->path);
+    c_free(url->query);
+    c_free(url->fragment);
 
-    if (uri->query_parameters) {
-        for (size_t i = 0; i < c_vector_length(uri->query_parameters); i++)
-            http_query_parameter_free(c_vector_entry(uri->query_parameters, i));
-        c_vector_delete(uri->query_parameters);
+    if (url->query_parameters) {
+        for (size_t i = 0; i < c_vector_length(url->query_parameters); i++)
+            http_query_parameter_free(c_vector_entry(url->query_parameters, i));
+        c_vector_delete(url->query_parameters);
     }
 
-    c_free0(uri, sizeof(struct http_uri));
+    c_free0(url, sizeof(struct http_url));
 }
 
-struct http_uri *
-http_uri_parse(const char *string) {
-    struct http_uri *uri;
+struct http_url *
+http_url_parse(const char *string) {
+    struct http_url *url;
     const char *ptr, *start, *end, *at, *colon;
     size_t toklen;
 
-    uri = http_uri_new();
+    url = http_url_new();
 
     ptr = string;
 
@@ -289,16 +289,16 @@ http_uri_parse(const char *string) {
         goto path;
 
     start = ptr;
-    if (!(http_uri_is_scheme_first_char(*ptr)))
+    if (!(http_url_is_scheme_first_char(*ptr)))
         HTTP_FAIL("invalid first character in scheme");
     for (;;) {
         if (*ptr == '\0' || *ptr == ':') {
             toklen = (size_t)(ptr - start);
             if (toklen == 0)
                 HTTP_FAIL("empty scheme");
-            uri->scheme = c_strndup(start, toklen);
+            url->scheme = c_strndup(start, toklen);
             break;
-        } else if (!http_uri_is_scheme_char(*ptr)) {
+        } else if (!http_url_is_scheme_char(*ptr)) {
             HTTP_FAIL("invalid character in scheme");
         }
 
@@ -326,16 +326,16 @@ http_uri_parse(const char *string) {
             toklen = (size_t)(at - ptr);
         }
 
-        uri->user = http_uri_userinfo_decode(ptr, toklen);
-        if (!uri->user)
+        url->user = http_url_userinfo_decode(ptr, toklen);
+        if (!url->user)
             HTTP_FAIL("cannot decode user: %s", c_get_error());
 
         if (colon) {
             /* Password */
             toklen = (size_t)(at - colon - 1);
 
-            uri->password = http_uri_userinfo_decode(colon + 1, toklen);
-            if (!uri->password)
+            url->password = http_url_userinfo_decode(colon + 1, toklen);
+            if (!url->password)
                 HTTP_FAIL("cannot decode password: %s", c_get_error());
         }
 
@@ -352,8 +352,8 @@ http_uri_parse(const char *string) {
         toklen = strcspn(ptr, ":/?#");
     }
 
-    uri->host = http_uri_host_decode(ptr, toklen);
-    if (!uri->host)
+    url->host = http_url_host_decode(ptr, toklen);
+    if (!url->host)
         HTTP_FAIL("cannot decode host: %s", c_get_error());
 
     ptr += toklen;
@@ -370,12 +370,12 @@ http_uri_parse(const char *string) {
         if (toklen == 0)
             HTTP_FAIL("empty port number");
 
-        uri->port = c_strndup(ptr, toklen);
-        if (c_parse_u16(uri->port, &uri->port_number, &port_sz) == -1)
+        url->port = c_strndup(ptr, toklen);
+        if (c_parse_u16(url->port, &url->port_number, &port_sz) == -1)
             HTTP_FAIL("invalid port number: %s", c_get_error());
-        if (port_sz != strlen(uri->port))
+        if (port_sz != strlen(url->port))
             HTTP_FAIL("invalid trailing data after port number");
-        if (uri->port_number == 0)
+        if (url->port_number == 0)
             HTTP_FAIL("invalid port number");
 
         ptr += toklen;
@@ -385,8 +385,8 @@ path:
     if (*ptr == '/') {
         /* Path */
         toklen = strcspn(ptr, "?#");
-        uri->path = http_uri_path_decode(ptr, toklen);
-        if (!uri->path)
+        url->path = http_url_path_decode(ptr, toklen);
+        if (!url->path)
             HTTP_FAIL("cannot decode path: %s", c_get_error());
 
         ptr += toklen;
@@ -397,12 +397,12 @@ path:
 
         /* Query */
         toklen = strcspn(ptr, "#");
-        uri->query = c_strndup(ptr, toklen);
-        if (!uri->query)
+        url->query = c_strndup(ptr, toklen);
+        if (!url->query)
             HTTP_FAIL("cannot decode query: %s", c_get_error());
 
-        uri->query_parameters = http_query_parameters_parse(uri->query);
-        if (!uri->query_parameters)
+        url->query_parameters = http_query_parameters_parse(url->query);
+        if (!url->query_parameters)
             HTTP_FAIL("cannot parse query parameters: %s", c_get_error());
 
         ptr += toklen;
@@ -413,8 +413,8 @@ path:
 
         /* Fragment */
         toklen = strlen(ptr);
-        uri->fragment = http_uri_fragment_decode(ptr, toklen);
-        if (!uri->fragment)
+        url->fragment = http_url_fragment_decode(ptr, toklen);
+        if (!url->fragment)
             HTTP_FAIL("cannot decode fragment: %s", c_get_error());
 
         ptr += toklen;
@@ -422,62 +422,62 @@ path:
 
 #undef HTTP_FAIL
 
-    return uri;
+    return url;
 
 error:
-    http_uri_delete(uri);
+    http_url_delete(url);
     return NULL;
 }
 
 void
-http_uri_to_buffer(const struct http_uri *uri, struct c_buffer *buf) {
-    if (uri->scheme)
-        c_buffer_add_printf(buf, "%s:", uri->scheme);
+http_url_to_buffer(const struct http_url *url, struct c_buffer *buf) {
+    if (url->scheme)
+        c_buffer_add_printf(buf, "%s:", url->scheme);
 
-    if (uri->host) {
+    if (url->host) {
         c_buffer_add_string(buf, "//");
 
-        if (uri->user) {
-            http_uri_encode(uri->user, buf);
+        if (url->user) {
+            http_url_encode(url->user, buf);
 
-            if (uri->password) {
+            if (url->password) {
                 c_buffer_add_string(buf, ":");
-                http_uri_encode(uri->password, buf);
+                http_url_encode(url->password, buf);
             }
 
             c_buffer_add_string(buf, "@");
         }
 
-        http_uri_encode(uri->host, buf);
+        http_url_encode(url->host, buf);
 
-        if (uri->port)
-            c_buffer_add_printf(buf, ":%u", uri->port_number);
+        if (url->port)
+            c_buffer_add_printf(buf, ":%u", url->port_number);
     }
 
-    if (uri->path) {
-        http_uri_path_encode(uri->path, buf);
+    if (url->path) {
+        http_url_path_encode(url->path, buf);
     } else {
         c_buffer_add_string(buf, "/");
     }
 
-    if (uri->query_parameters) {
+    if (url->query_parameters) {
         c_buffer_add_string(buf, "?");
-        http_query_parameters_to_buffer(uri->query_parameters, buf);
+        http_query_parameters_to_buffer(url->query_parameters, buf);
     }
 
-    if (uri->fragment) {
+    if (url->fragment) {
         c_buffer_add_string(buf, "#");
-        http_uri_fragment_encode(uri->fragment, buf);
+        http_url_fragment_encode(url->fragment, buf);
     }
 }
 
 char *
-http_uri_to_string(const struct http_uri *uri) {
+http_url_to_string(const struct http_url *url) {
     struct c_buffer *buf;
     char *string;
 
     buf = c_buffer_new();
-    http_uri_to_buffer(uri, buf);
+    http_url_to_buffer(url, buf);
 
     string = c_buffer_extract_string(buf, NULL);
     c_buffer_delete(buf);
@@ -485,39 +485,39 @@ http_uri_to_string(const struct http_uri *uri) {
     return string;
 }
 
-struct http_uri *
-http_uri_clone(const struct http_uri *uri) {
-    struct http_uri *new_uri;
+struct http_url *
+http_url_clone(const struct http_url *url) {
+    struct http_url *new_url;
 
-    new_uri = http_uri_new();
+    new_url = http_url_new();
 
-    if (uri->scheme)
-        new_uri->scheme = c_strdup(uri->scheme);
-    if (uri->user)
-        new_uri->user = c_strdup(uri->user);
-    if (uri->password)
-        new_uri->password = c_strdup(uri->password);
-    if (uri->host)
-        new_uri->host = c_strdup(uri->host);
-    if (uri->port)
-        new_uri->port = c_strdup(uri->port);
-    new_uri->port_number = uri->port_number;
-    if (uri->path)
-        new_uri->path = c_strdup(uri->path);
-    if (uri->query)
-        new_uri->query = c_strdup(uri->query);
-    if (uri->fragment)
-        new_uri->fragment = c_strdup(uri->fragment);
+    if (url->scheme)
+        new_url->scheme = c_strdup(url->scheme);
+    if (url->user)
+        new_url->user = c_strdup(url->user);
+    if (url->password)
+        new_url->password = c_strdup(url->password);
+    if (url->host)
+        new_url->host = c_strdup(url->host);
+    if (url->port)
+        new_url->port = c_strdup(url->port);
+    new_url->port_number = url->port_number;
+    if (url->path)
+        new_url->path = c_strdup(url->path);
+    if (url->query)
+        new_url->query = c_strdup(url->query);
+    if (url->fragment)
+        new_url->fragment = c_strdup(url->fragment);
 
-    if (uri->query_parameters) {
+    if (url->query_parameters) {
         struct c_vector *parameters;
 
         parameters = c_vector_new(sizeof(struct http_query_parameter));
-        for (size_t i = 0; i < c_vector_length(uri->query_parameters); i++) {
+        for (size_t i = 0; i < c_vector_length(url->query_parameters); i++) {
             struct http_query_parameter *parameter;
             struct http_query_parameter new_parameter;
 
-            parameter = c_vector_entry(uri->query_parameters, i);
+            parameter = c_vector_entry(url->query_parameters, i);
 
             http_query_parameter_init(&new_parameter);
             new_parameter.name = c_strdup(parameter->name);
@@ -526,122 +526,122 @@ http_uri_clone(const struct http_uri *uri) {
             c_vector_append(parameters, &new_parameter);
         }
 
-        new_uri->query_parameters = parameters;
+        new_url->query_parameters = parameters;
     }
 
-    return new_uri;
+    return new_url;
 }
 
 const char *
-http_uri_scheme(const struct http_uri *uri) {
-    return uri->scheme;
+http_url_scheme(const struct http_url *url) {
+    return url->scheme;
 }
 
 const char *
-http_uri_user(const struct http_uri *uri) {
-    return uri->user;
+http_url_user(const struct http_url *url) {
+    return url->user;
 }
 
 const char *
-http_uri_password(const struct http_uri *uri) {
-    return uri->password;
+http_url_password(const struct http_url *url) {
+    return url->password;
 }
 
 const char *
-http_uri_host(const struct http_uri *uri) {
-    return uri->host;
+http_url_host(const struct http_url *url) {
+    return url->host;
 }
 
 const char *
-http_uri_port(const struct http_uri *uri) {
-    return uri->port;
+http_url_port(const struct http_url *url) {
+    return url->port;
 }
 
 uint16_t
-http_uri_port_number(const struct http_uri *uri) {
-    return uri->port_number;
+http_url_port_number(const struct http_url *url) {
+    return url->port_number;
 }
 
 const char *
-http_uri_path(const struct http_uri *uri) {
-    return uri->path;
+http_url_path(const struct http_url *url) {
+    return url->path;
 }
 
 const char *
-http_uri_query(const struct http_uri *uri) {
-    return uri->query;
+http_url_query(const struct http_url *url) {
+    return url->query;
 }
 
 const char *
-http_uri_fragment(const struct http_uri *uri) {
-    return uri->fragment;
+http_url_fragment(const struct http_url *url) {
+    return url->fragment;
 }
 
 void
-http_uri_set_scheme(struct http_uri *uri, const char *string) {
-    c_free(uri->scheme);
-    uri->scheme = c_strdup(string);
+http_url_set_scheme(struct http_url *url, const char *string) {
+    c_free(url->scheme);
+    url->scheme = c_strdup(string);
 }
 
 void
-http_uri_set_user(struct http_uri *uri, const char *string) {
-    c_free(uri->user);
-    uri->user = c_strdup(string);
+http_url_set_user(struct http_url *url, const char *string) {
+    c_free(url->user);
+    url->user = c_strdup(string);
 }
 
 void
-http_uri_set_password(struct http_uri *uri, const char *string) {
-    c_free(uri->password);
-    uri->password = c_strdup(string);
+http_url_set_password(struct http_url *url, const char *string) {
+    c_free(url->password);
+    url->password = c_strdup(string);
 }
 
 void
-http_uri_set_host(struct http_uri *uri, const char *string) {
-    c_free(uri->host);
-    uri->host = c_strdup(string);
+http_url_set_host(struct http_url *url, const char *string) {
+    c_free(url->host);
+    url->host = c_strdup(string);
 }
 
 void
-http_uri_set_port(struct http_uri *uri, uint16_t port) {
-    uri->port_number = port;
-    c_free(uri->port);
-    c_asprintf(&uri->port, "%u", port);
+http_url_set_port(struct http_url *url, uint16_t port) {
+    url->port_number = port;
+    c_free(url->port);
+    c_asprintf(&url->port, "%u", port);
 }
 
 void
-http_uri_set_path(struct http_uri *uri, const char *string) {
-    c_free(uri->path);
-    uri->path = c_strdup(string);
+http_url_set_path(struct http_url *url, const char *string) {
+    c_free(url->path);
+    url->path = c_strdup(string);
 }
 
 void
-http_uri_set_query(struct http_uri *uri, const char *string) {
-    c_free(uri->query);
-    uri->query = c_strdup(string);
+http_url_set_query(struct http_url *url, const char *string) {
+    c_free(url->query);
+    url->query = c_strdup(string);
 }
 
 void
-http_uri_set_fragment(struct http_uri *uri, const char *string) {
-    c_free(uri->fragment);
-    uri->fragment = c_strdup(string);
+http_url_set_fragment(struct http_url *url, const char *string) {
+    c_free(url->fragment);
+    url->fragment = c_strdup(string);
 }
 
 size_t
-http_uri_nb_query_parameters(const struct http_uri *uri) {
-    if (!uri->query_parameters)
+http_url_nb_query_parameters(const struct http_url *url) {
+    if (!url->query_parameters)
         return 0;
 
-    return c_vector_length(uri->query_parameters);
+    return c_vector_length(url->query_parameters);
 }
 
 const char *
-http_uri_nth_query_parameter(const struct http_uri *uri, size_t idx,
+http_url_nth_query_parameter(const struct http_url *url, size_t idx,
                              const char **pvalue) {
     const struct http_query_parameter *parameter;
 
-    assert(uri->query_parameters);
+    assert(url->query_parameters);
 
-    parameter = c_vector_entry(uri->query_parameters, idx);
+    parameter = c_vector_entry(url->query_parameters, idx);
 
     if (pvalue)
         *pvalue = parameter->value;
@@ -649,7 +649,7 @@ http_uri_nth_query_parameter(const struct http_uri *uri, size_t idx,
 }
 
 bool
-http_uri_has_query_parameter(const struct http_uri *uri, const char *name,
+http_url_has_query_parameter(const struct http_url *url, const char *name,
                              const char **pvalue) {
     const char *value;
     bool found;
@@ -657,13 +657,13 @@ http_uri_has_query_parameter(const struct http_uri *uri, const char *name,
     value = NULL;
     found = false;
 
-    if (!uri->query_parameters)
+    if (!url->query_parameters)
         return false;
 
-    for (size_t i = 0; i < c_vector_length(uri->query_parameters); i++) {
+    for (size_t i = 0; i < c_vector_length(url->query_parameters); i++) {
         const struct http_query_parameter *parameter;
 
-        parameter = c_vector_entry(uri->query_parameters, i);
+        parameter = c_vector_entry(url->query_parameters, i);
 
         if (strcmp(parameter->name, name) == 0) {
             value = parameter->value;
@@ -677,23 +677,23 @@ http_uri_has_query_parameter(const struct http_uri *uri, const char *name,
 }
 
 const char *
-http_uri_query_parameter(const struct http_uri *uri, const char *name) {
+http_url_query_parameter(const struct http_url *url, const char *name) {
     const char *value;
 
-    if (http_uri_has_query_parameter(uri, name, &value))
+    if (http_url_has_query_parameter(url, name, &value))
         return value;
 
     return NULL;
 }
 
 static bool
-http_uri_is_scheme_first_char(char c) {
+http_url_is_scheme_first_char(char c) {
     return (c >= 'a' && c <= 'z')
         || (c >= 'A' && c <= 'Z');
 }
 
 static bool
-http_uri_is_scheme_char(char c) {
+http_url_is_scheme_char(char c) {
     return (c >= 'a' && c <= 'z')
         || (c >= 'A' && c <= 'Z')
         || (c >= '0' && c <= '9')
@@ -701,14 +701,14 @@ http_uri_is_scheme_char(char c) {
 }
 
 static bool
-http_uri_is_sub_delims(char c) {
+http_url_is_sub_delims(char c) {
     return c == '!' || c == '$' || c == '$' || c == '&' || c == '\''
         || c == '(' || c == ')' || c == '*' || c == '+' || c == ','
         || c == ';' || c == '=';
 }
 
 static bool
-http_uri_is_unreserved(char c) {
+http_url_is_unreserved(char c) {
     return (c >= 'a' && c <= 'z')
         || (c >= 'A' && c <= 'Z')
         || (c >= '0' && c <= '9')
@@ -716,7 +716,7 @@ http_uri_is_unreserved(char c) {
 }
 
 static char *
-http_uri_userinfo_decode(const char *data, size_t sz) {
+http_url_userinfo_decode(const char *data, size_t sz) {
     struct c_buffer *buf;
     char *string;
     const char *ptr, *start;
@@ -732,8 +732,8 @@ http_uri_userinfo_decode(const char *data, size_t sz) {
         if (len == 0) {
             c_buffer_add(buf, start, (size_t)(ptr - start));
             break;
-        } else if (http_uri_is_unreserved(*ptr)
-                || http_uri_is_sub_delims(*ptr)) {
+        } else if (http_url_is_unreserved(*ptr)
+                || http_url_is_sub_delims(*ptr)) {
             ptr++;
             len--;
         } else if (*ptr == '%') {
@@ -741,7 +741,7 @@ http_uri_userinfo_decode(const char *data, size_t sz) {
 
             c_buffer_add(buf, start, (size_t)(ptr - start));
 
-            if (http_uri_pct_decode(ptr, &c) == -1)
+            if (http_url_pct_decode(ptr, &c) == -1)
                 goto error;
 
             c_buffer_add(buf, &c, 1);
@@ -766,7 +766,7 @@ error:
 }
 
 static char *
-http_uri_host_decode(const char *data, size_t sz) {
+http_url_host_decode(const char *data, size_t sz) {
     struct c_buffer *buf;
     char *string;
     const char *ptr, *start;
@@ -789,7 +789,7 @@ http_uri_host_decode(const char *data, size_t sz) {
 
             c_buffer_add(buf, start, (size_t)(ptr - start));
 
-            if (http_uri_pct_decode(ptr, &c) == -1)
+            if (http_url_pct_decode(ptr, &c) == -1)
                 goto error;
 
             c_buffer_add(buf, &c, 1);
@@ -814,7 +814,7 @@ error:
 }
 
 static char *
-http_uri_path_decode(const char *data, size_t sz) {
+http_url_path_decode(const char *data, size_t sz) {
     struct c_buffer *buf;
     char *string;
     const char *ptr, *start;
@@ -837,7 +837,7 @@ http_uri_path_decode(const char *data, size_t sz) {
 
             c_buffer_add(buf, start, (size_t)(ptr - start));
 
-            if (http_uri_pct_decode(ptr, &c) == -1)
+            if (http_url_pct_decode(ptr, &c) == -1)
                 goto error;
 
             c_buffer_add(buf, &c, 1);
@@ -862,12 +862,12 @@ error:
 }
 
 static char *
-http_uri_query_decode(const char *data, size_t sz) {
-    return http_uri_fragment_decode(data, sz);
+http_url_query_decode(const char *data, size_t sz) {
+    return http_url_fragment_decode(data, sz);
 }
 
 static char *
-http_uri_fragment_decode(const char *data, size_t sz) {
+http_url_fragment_decode(const char *data, size_t sz) {
     struct c_buffer *buf;
     char *string;
     const char *ptr, *start;
@@ -883,8 +883,8 @@ http_uri_fragment_decode(const char *data, size_t sz) {
         if (len == 0) {
             c_buffer_add(buf, start, (size_t)(ptr - start));
             break;
-        } else if (http_uri_is_unreserved(*ptr)
-                || http_uri_is_sub_delims(*ptr)
+        } else if (http_url_is_unreserved(*ptr)
+                || http_url_is_sub_delims(*ptr)
                 || *ptr == ':' || *ptr == '@'
                 || *ptr == '/' || *ptr == '?') {
             ptr++;
@@ -894,7 +894,7 @@ http_uri_fragment_decode(const char *data, size_t sz) {
 
             c_buffer_add(buf, start, (size_t)(ptr - start));
 
-            if (http_uri_pct_decode(ptr, &c) == -1)
+            if (http_url_pct_decode(ptr, &c) == -1)
                 goto error;
 
             c_buffer_add(buf, &c, 1);
@@ -919,7 +919,7 @@ error:
 }
 
 static void
-http_uri_encode(const char *string, struct c_buffer *buf) {
+http_url_encode(const char *string, struct c_buffer *buf) {
     const char *iptr;
     char *optr;
     size_t len;
@@ -927,8 +927,8 @@ http_uri_encode(const char *string, struct c_buffer *buf) {
     iptr = string;
     len = 0;
     while (*iptr != '\0') {
-        if (http_uri_is_unreserved(*iptr)
-         || http_uri_is_sub_delims(*iptr)) {
+        if (http_url_is_unreserved(*iptr)
+         || http_url_is_sub_delims(*iptr)) {
             len += 1;
         } else {
             len += 3;
@@ -941,11 +941,11 @@ http_uri_encode(const char *string, struct c_buffer *buf) {
 
     iptr = string;
     while (*iptr != '\0') {
-        if (http_uri_is_unreserved(*iptr)
-         || http_uri_is_sub_delims(*iptr)) {
+        if (http_url_is_unreserved(*iptr)
+         || http_url_is_sub_delims(*iptr)) {
             *optr++ = *iptr++;
         } else {
-            http_uri_pct_encode(*iptr, optr);
+            http_url_pct_encode(*iptr, optr);
             iptr += 1;
             optr += 3;
         }
@@ -955,7 +955,7 @@ http_uri_encode(const char *string, struct c_buffer *buf) {
 }
 
 static void
-http_uri_path_encode(const char *string, struct c_buffer *buf) {
+http_url_path_encode(const char *string, struct c_buffer *buf) {
     const char *iptr;
     char *optr;
     size_t len;
@@ -963,8 +963,8 @@ http_uri_path_encode(const char *string, struct c_buffer *buf) {
     iptr = string;
     len = 0;
     while (*iptr != '\0') {
-        if (http_uri_is_unreserved(*iptr)
-         || http_uri_is_sub_delims(*iptr)
+        if (http_url_is_unreserved(*iptr)
+         || http_url_is_sub_delims(*iptr)
          || *iptr == '/') {
             len += 1;
         } else {
@@ -978,12 +978,12 @@ http_uri_path_encode(const char *string, struct c_buffer *buf) {
 
     iptr = string;
     while (*iptr != '\0') {
-        if (http_uri_is_unreserved(*iptr)
-         || http_uri_is_sub_delims(*iptr)
+        if (http_url_is_unreserved(*iptr)
+         || http_url_is_sub_delims(*iptr)
          || *iptr == '/') {
             *optr++ = *iptr++;
         } else {
-            http_uri_pct_encode(*iptr, optr);
+            http_url_pct_encode(*iptr, optr);
             iptr += 1;
             optr += 3;
         }
@@ -993,7 +993,7 @@ http_uri_path_encode(const char *string, struct c_buffer *buf) {
 }
 
 static void
-http_uri_fragment_encode(const char *string, struct c_buffer *buf) {
+http_url_fragment_encode(const char *string, struct c_buffer *buf) {
     const char *iptr;
     char *optr;
     size_t len;
@@ -1001,8 +1001,8 @@ http_uri_fragment_encode(const char *string, struct c_buffer *buf) {
     iptr = string;
     len = 0;
     while (*iptr != '\0') {
-        if (http_uri_is_unreserved(*iptr)
-         || http_uri_is_sub_delims(*iptr)
+        if (http_url_is_unreserved(*iptr)
+         || http_url_is_sub_delims(*iptr)
          || *iptr == ':' || *iptr == '@' || *iptr == '/' || *iptr == '?') {
             len += 1;
         } else {
@@ -1016,12 +1016,12 @@ http_uri_fragment_encode(const char *string, struct c_buffer *buf) {
 
     iptr = string;
     while (*iptr != '\0') {
-        if (http_uri_is_unreserved(*iptr)
-         || http_uri_is_sub_delims(*iptr)
+        if (http_url_is_unreserved(*iptr)
+         || http_url_is_sub_delims(*iptr)
          || *iptr == ':' || *iptr == '@' || *iptr == '/' || *iptr == '?') {
             *optr++ = *iptr++;
         } else {
-            http_uri_pct_encode(*iptr, optr);
+            http_url_pct_encode(*iptr, optr);
             iptr += 1;
             optr += 3;
 
@@ -1036,14 +1036,14 @@ http_uri_fragment_encode(const char *string, struct c_buffer *buf) {
  *  Misc
  * ------------------------------------------------------------------------ */
 static bool
-http_uri_is_hex_digit(char c) {
+http_url_is_hex_digit(char c) {
     return (c >= '0' && c <= '9')
         || (c >= 'a' && c <= 'f')
         || (c >= 'F' && c <= 'F');
 }
 
 static int
-http_uri_hex_digit_decode(char c, int *pval) {
+http_url_hex_digit_decode(char c, int *pval) {
     if (c >= '0' && c <= '9') {
         *pval = c - '0';
     } else if (c >= 'a' && c <= 'f') {
@@ -1058,7 +1058,7 @@ http_uri_hex_digit_decode(char c, int *pval) {
 }
 
 static int
-http_uri_pct_decode(const char *ptr, char *pc) {
+http_url_pct_decode(const char *ptr, char *pc) {
     int d1, d2;
 
     if (ptr[0] != '%') {
@@ -1066,9 +1066,9 @@ http_uri_pct_decode(const char *ptr, char *pc) {
         return -1;
     }
 
-    if (http_uri_hex_digit_decode(ptr[1], &d1) == -1)
+    if (http_url_hex_digit_decode(ptr[1], &d1) == -1)
         return -1;
-    if (http_uri_hex_digit_decode(ptr[2], &d2) == -1)
+    if (http_url_hex_digit_decode(ptr[2], &d2) == -1)
         return -1;
 
     *pc = (d1 << 4) | d2;
@@ -1077,7 +1077,7 @@ http_uri_pct_decode(const char *ptr, char *pc) {
 }
 
 static void
-http_uri_pct_encode(char c, char *ptr) {
+http_url_pct_encode(char c, char *ptr) {
     static const char *hex_digits = "0123456789abcdef";
 
     *ptr++ = '%';

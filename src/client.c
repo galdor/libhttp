@@ -87,26 +87,26 @@ http_client_connect(struct http_client *client,
 }
 
 int
-http_client_connect_uri(struct http_client *client,
-                        const struct http_uri *uri,
+http_client_connect_url(struct http_client *client,
+                        const struct http_url *url,
                         const struct io_ssl_client_cfg *ssl_cfg) {
     const char *host;
     uint16_t port;
 
-    host = uri->host;
+    host = url->host;
 
-    port = uri->port_number;
+    port = url->port_number;
     if (port == 0) {
         const char *scheme;
 
-        scheme = http_uri_scheme(uri);
+        scheme = http_url_scheme(url);
         if (strcasecmp(scheme, "http") == 0) {
             port = 80;
         } else if (strcasecmp(scheme, "https") == 0) {
             if (!io_tcp_client_is_ssl_enabled(client->tcp_client)) {
                 if (!ssl_cfg) {
                     c_set_error("missing ssl configuration for "
-                                "https uri scheme");
+                                "https url scheme");
                     return -1;
                 }
 
@@ -118,7 +118,7 @@ http_client_connect_uri(struct http_client *client,
 
             port = 443;
         } else {
-            c_set_error("unknown uri scheme");
+            c_set_error("unknown url scheme");
             return -1;
         }
     }
@@ -199,14 +199,14 @@ http_client_send_request(struct http_client *client,
 
 void
 http_client_request_empty(struct http_client *client, enum http_method method,
-                          struct http_uri *uri, struct http_headers *headers,
+                          struct http_url *url, struct http_headers *headers,
                           http_client_response_cb cb, void *cb_arg) {
     struct http_request *request;
 
     request = http_request_new();
 
     request->method = method;
-    request->target_uri = uri;
+    request->target_url = url;
 
     if (headers) {
         http_headers_merge_nocopy(request->headers, headers);
@@ -218,16 +218,16 @@ http_client_request_empty(struct http_client *client, enum http_method method,
 
 void
 http_client_request_data(struct http_client *client, enum http_method method,
-                         struct http_uri *uri, struct http_headers *headers,
+                         struct http_url *url, struct http_headers *headers,
                          const void *data, size_t sz,
                          http_client_response_cb cb, void *cb_arg) {
-    http_client_request_data_nocopy(client, method, uri, headers,
+    http_client_request_data_nocopy(client, method, url, headers,
                                     c_memdup(data, sz), sz, cb, cb_arg);
 }
 
 void
 http_client_request_data_nocopy(struct http_client *client,
-                                enum http_method method, struct http_uri *uri,
+                                enum http_method method, struct http_url *url,
                                 struct http_headers *headers,
                                 void *data, size_t sz,
                                 http_client_response_cb cb, void *cb_arg) {
@@ -235,7 +235,7 @@ http_client_request_data_nocopy(struct http_client *client,
 
     request = http_request_new();
     request->method = method;
-    request->target_uri = uri;
+    request->target_url = url;
 
     if (headers) {
         http_headers_merge_nocopy(request->headers, headers);
@@ -250,10 +250,10 @@ http_client_request_data_nocopy(struct http_client *client,
 
 void
 http_client_request_string(struct http_client *client, enum http_method method,
-                           struct http_uri *uri, struct http_headers *headers,
+                           struct http_url *url, struct http_headers *headers,
                            const char *string,
                            http_client_response_cb cb, void *cb_arg) {
-    http_client_request_data(client, method, uri, headers,
+    http_client_request_data(client, method, url, headers,
                              string, strlen(string), cb, cb_arg);
 }
 

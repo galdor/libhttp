@@ -17,7 +17,7 @@
 
 #include <signal.h>
 
-#include "http.h"
+#include "../src/http.h"
 
 static void httpex_die(const char *, ...)
     __attribute__ ((format(printf, 1, 2), noreturn));
@@ -25,47 +25,47 @@ static void httpex_die(const char *, ...)
 int
 main(int argc, char **argv) {
     struct c_command_line *cmdline;
-    const char *uri_string;
-    struct http_uri *uri;
+    const char *url_string;
+    struct http_url *url;
     char *result;
 
     cmdline = c_command_line_new();
 
-    c_command_line_add_argument(cmdline, "the uri string", "uri");
+    c_command_line_add_argument(cmdline, "the url string", "url");
 
     if (c_command_line_parse(cmdline, argc, argv) == -1)
         httpex_die("%s", c_get_error());
 
-    uri_string = c_command_line_argument_value(cmdline, 0);
+    url_string = c_command_line_argument_value(cmdline, 0);
 
-    uri = http_uri_parse(uri_string);
-    if (!uri)
-        httpex_die("cannot parse uri: %s", c_get_error());
+    url = http_url_parse(url_string);
+    if (!url)
+        httpex_die("cannot parse url: %s", c_get_error());
 
-    if (http_uri_scheme(uri))
-        printf("- %-12s  '%s'\n", "scheme", http_uri_scheme(uri));
-    if (http_uri_user(uri))
-        printf("- %-12s  '%s'\n", "user", http_uri_user(uri));
-    if (http_uri_password(uri))
-        printf("- %-12s  '%s'\n", "password", http_uri_password(uri));
-    if (http_uri_host(uri))
-        printf("- %-12s  '%s'\n", "host", http_uri_host(uri));
-    if (http_uri_port(uri)) {
-        printf("- %-12s  '%s'\n", "port", http_uri_port(uri));
-        printf("  %-12s  %u\n", "port number", http_uri_port_number(uri));
+    if (http_url_scheme(url))
+        printf("- %-12s  '%s'\n", "scheme", http_url_scheme(url));
+    if (http_url_user(url))
+        printf("- %-12s  '%s'\n", "user", http_url_user(url));
+    if (http_url_password(url))
+        printf("- %-12s  '%s'\n", "password", http_url_password(url));
+    if (http_url_host(url))
+        printf("- %-12s  '%s'\n", "host", http_url_host(url));
+    if (http_url_port(url)) {
+        printf("- %-12s  '%s'\n", "port", http_url_port(url));
+        printf("  %-12s  %u\n", "port number", http_url_port_number(url));
     }
-    if (http_uri_path(uri))
-        printf("- %-12s  '%s'\n", "path", http_uri_path(uri));
-    if (http_uri_query(uri)) {
+    if (http_url_path(url))
+        printf("- %-12s  '%s'\n", "path", http_url_path(url));
+    if (http_url_query(url)) {
         size_t nb_params;
 
-        printf("- %-12s  '%s'\n", "query", http_uri_query(uri));
+        printf("- %-12s  '%s'\n", "query", http_url_query(url));
 
-        nb_params = http_uri_nb_query_parameters(uri);
+        nb_params = http_url_nb_query_parameters(url);
         for (size_t i = 0; i < nb_params; i++) {
             const char *name, *value;
 
-            name = http_uri_nth_query_parameter(uri, i, &value);
+            name = http_url_nth_query_parameter(url, i, &value);
 
             if (value) {
                 printf("  %-12s  %s\n", name, value);
@@ -74,14 +74,14 @@ main(int argc, char **argv) {
             }
         }
     }
-    if (http_uri_fragment(uri))
-        printf("- %-12s  '%s'\n", "fragment", http_uri_fragment(uri));
+    if (http_url_fragment(url))
+        printf("- %-12s  '%s'\n", "fragment", http_url_fragment(url));
 
-    result = http_uri_to_string(uri);
+    result = http_url_to_string(url);
     printf("\n%s\n", result);
     c_free(result);
 
-    http_uri_delete(uri);
+    http_url_delete(url);
 
     c_command_line_delete(cmdline);
     return 0;
