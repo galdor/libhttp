@@ -371,7 +371,7 @@ typedef void (*http_server_request_cb)(struct http_request *, void *, void *);
 typedef void (*http_server_response_cb)(struct http_response *, void *);
 typedef void (*http_server_error_cb)(struct http_request *,
                                      enum http_status, struct http_headers *,
-                                     const char *, void *);
+                                     void *, const char *, void *);
 
 struct http_server *http_server_new(struct io_base *, struct http_router *);
 void http_server_delete(struct http_server *);
@@ -409,9 +409,11 @@ void *http_server_conn_private_data(const struct http_server_conn *);
 
 void http_server_conn_disconnect(struct http_server_conn *);
 
+void http_reply_verror(struct http_request *, enum http_status,
+                       struct http_headers *, void *, const char *, va_list);
 void http_reply_error(struct http_request *, enum http_status,
-                      struct http_headers *, const char *, ...)
-    __attribute__ ((format(printf, 4, 5)));
+                      struct http_headers *, void *, const char *, ...)
+    __attribute__ ((format(printf, 5, 6)));
 
 void http_reply_empty(struct http_request *, enum http_status,
                       struct http_headers *);

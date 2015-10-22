@@ -208,12 +208,12 @@ httpex_on_request_number_get(struct http_request *request, void *arg) {
 
     string = http_request_named_parameter(request, "n");
     if (!string) {
-        http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL, NULL);
+        http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL, NULL, NULL);
         return;
     }
 
     if (c_parse_i64(string, &number, NULL) == -1) {
-        http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL,
+        http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL, NULL,
                          "cannot parse number: %s", c_get_error());
         return;
     }
@@ -234,7 +234,7 @@ httpex_on_request_private_get(struct http_request *request, void *arg) {
         headers = http_headers_new();
         http_headers_set(headers, "WWW-Authenticate", "Basic realm=\"libhttp\"");
 
-        http_reply_error(request, HTTP_401_UNAUTHORIZED, headers,
+        http_reply_error(request, HTTP_401_UNAUTHORIZED, headers, NULL,
                          "missing authentication data");
         return;
     }
@@ -242,7 +242,7 @@ httpex_on_request_private_get(struct http_request *request, void *arg) {
     http_request_basic_auth_data(request, &user, &password);
 
     if (strcmp(user, "root") != 0 || strcmp(password, "root") != 0) {
-        http_reply_error(request, HTTP_401_UNAUTHORIZED, NULL,
+        http_reply_error(request, HTTP_401_UNAUTHORIZED, NULL, NULL,
                          "invalid credentials");
         return;
     }
