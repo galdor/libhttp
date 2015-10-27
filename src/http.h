@@ -319,6 +319,7 @@ int http_client_enable_ssl(struct http_client *,
 int http_client_connect(struct http_client *, const char *, uint16_t);
 int http_client_connect_url(struct http_client *, const struct http_url *,
                             const struct io_ssl_client_cfg *);
+void http_client_close(struct http_client *);
 void http_client_disconnect(struct http_client *);
 bool http_client_is_connected(struct http_client *);
 

@@ -127,6 +127,11 @@ http_client_connect_url(struct http_client *client,
 }
 
 void
+http_client_close(struct http_client *client) {
+    io_tcp_client_close(client->tcp_client);
+}
+
+void
 http_client_disconnect(struct http_client *client) {
     io_tcp_client_disconnect(client->tcp_client);
 }
