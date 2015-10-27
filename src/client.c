@@ -123,7 +123,12 @@ http_client_connect_url(struct http_client *client,
         }
     }
 
-    return http_client_connect(client, host, port);
+    if (http_client_connect(client, host, port) == -1) {
+        c_set_error("cannot connect to %s:%u: %s", host, port, c_get_error());
+        return -1;
+    }
+
+    return 0;
 }
 
 void
