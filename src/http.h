@@ -103,6 +103,7 @@ enum http_version {
 };
 
 const char *http_version_to_string(enum http_version);
+int http_version_parse(const char *, size_t, enum http_version *);
 
 enum http_method {
     HTTP_GET,
@@ -116,6 +117,7 @@ enum http_method {
 };
 
 const char *http_method_to_string(enum http_method);
+int http_method_parse(const char *, size_t, enum http_method *);
 
 enum http_status {
     /* 1xx */

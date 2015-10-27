@@ -106,11 +106,7 @@ struct http_media_type {
  * ------------------------------------------------------------------------ */
 #define HTTP_METHOD_MAX_LENGTH 7 /* OPTIONS */
 
-int http_method_parse(const char *, size_t, enum http_method *);
-
 #define HTTP_VERSION_MAX_LENGTH 8 /* HTTP/1.1 */
-
-int http_version_parse(const char *, size_t, enum http_version *);
 
 #define HTTP_REASON_MAX_LENGTH 256
 
