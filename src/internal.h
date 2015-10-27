@@ -348,6 +348,7 @@ struct http_server_conn {
 
     void *private_data;
 
+    bool use_pipelining;
     bool do_close;
 };
 

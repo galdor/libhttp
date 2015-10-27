@@ -37,6 +37,8 @@ http_server_conn_new(struct http_server *server,
     conn->requests = c_queue_new();
     conn->responses = c_queue_new();
 
+    conn->use_pipelining = true;
+
     return conn;
 }
 
@@ -80,6 +82,11 @@ http_server_conn_private_data(const struct http_server_conn *conn) {
 }
 
 void
+http_server_conn_disable_pipelining(struct http_server_conn *conn) {
+    conn->use_pipelining = false;
+}
+
+void
 http_server_conn_disconnect(struct http_server_conn *conn) {
     io_tcp_server_conn_disconnect(conn->tcp_conn);
 }
@@ -110,6 +117,9 @@ http_server_conn_send_response(struct http_server_conn *conn,
 
     http_response_finalize(response);
 
+    if (!conn->use_pipelining)
+        http_response_set_header(response, "Connection", "close");
+
     if (server->response_cb && !request->dummy)
         server->response_cb(response, server->response_cb_arg);
 
@@ -120,6 +130,11 @@ http_server_conn_send_response(struct http_server_conn *conn,
         http_request_delete(request);
 
         http_response_delete(response);
+
+        if (!conn->use_pipelining) {
+            http_server_conn_disconnect(conn);
+            return;
+        }
 
         while (c_queue_length(conn->responses) > 0) {
             struct http_response *oresponse;
@@ -139,11 +154,9 @@ http_server_conn_send_response(struct http_server_conn *conn,
             c_queue_pop(conn->responses);
             http_response_delete(response);
         }
-
-        return;
+    } else {
+        c_queue_push(conn->responses, response);
     }
-
-    c_queue_push(conn->responses, response);
 }
 
 void
