@@ -580,50 +580,75 @@ http_url_fragment(const struct http_url *url) {
 void
 http_url_set_scheme(struct http_url *url, const char *string) {
     c_free(url->scheme);
-    url->scheme = c_strdup(string);
+    url->scheme = NULL;
+
+    if (string)
+        url->scheme = c_strdup(string);
 }
 
 void
 http_url_set_user(struct http_url *url, const char *string) {
     c_free(url->user);
-    url->user = c_strdup(string);
+    url->user = NULL;
+
+    if (string)
+        url->user = c_strdup(string);
 }
 
 void
 http_url_set_password(struct http_url *url, const char *string) {
     c_free(url->password);
-    url->password = c_strdup(string);
+    url->password = NULL;
+
+    if (string)
+        url->password = c_strdup(string);
 }
 
 void
 http_url_set_host(struct http_url *url, const char *string) {
     c_free(url->host);
-    url->host = c_strdup(string);
+    url->host = NULL;
+
+    if (string)
+        url->host = c_strdup(string);
 }
 
 void
 http_url_set_port(struct http_url *url, uint16_t port) {
     url->port_number = port;
+
     c_free(url->port);
-    c_asprintf(&url->port, "%u", port);
+    url->port = NULL;
+
+    if (port > 0)
+        c_asprintf(&url->port, "%u", port);
 }
 
 void
 http_url_set_path(struct http_url *url, const char *string) {
     c_free(url->path);
-    url->path = c_strdup(string);
+    url->path = NULL;
+
+    if (string)
+        url->path = c_strdup(string);
 }
 
 void
 http_url_set_query(struct http_url *url, const char *string) {
     c_free(url->query);
-    url->query = c_strdup(string);
+    url->query = NULL;
+
+    if (string)
+        url->query = c_strdup(string);
 }
 
 void
 http_url_set_fragment(struct http_url *url, const char *string) {
     c_free(url->fragment);
-    url->fragment = c_strdup(string);
+    url->fragment = NULL;
+
+    if (string)
+        url->fragment = c_strdup(string);
 }
 
 size_t
