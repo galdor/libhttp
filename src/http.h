@@ -272,6 +272,7 @@ int http_request_accepts_media_type(const struct http_request *,
 struct http_response;
 
 struct http_request *http_response_request(const struct http_response *);
+enum http_version http_response_version(const struct http_response *);
 enum http_status http_response_status(const struct http_response *);
 const char *http_response_reason(const struct http_response *);
 

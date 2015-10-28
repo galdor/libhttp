@@ -278,6 +278,11 @@ http_response_request(const struct http_response *response) {
     return response->request;
 }
 
+enum http_version
+http_response_version(const struct http_response *response) {
+    return response->version;
+}
+
 enum http_status
 http_response_status(const struct http_response *response) {
     return response->status;
