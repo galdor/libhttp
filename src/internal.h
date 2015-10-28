@@ -245,13 +245,19 @@ struct http_response {
     bool has_content_length;
     size_t content_length;
     bool is_body_chunked;
+
+    bool has_connection_close;
 };
 
 struct http_response *http_response_new(void);
 void http_response_delete(struct http_response *);
 
-int http_response_parse(const char *, size_t, struct http_response **,
-                        size_t *);
+enum http_response_parse_flag {
+    HTTP_RESPONSE_PARSE_CONNECTION_CLOSED = (1 << 0),
+};
+
+int http_response_parse(const char *, size_t, uint32_t,
+                        struct http_response **, size_t *);
 
 void http_response_finalize(struct http_response *);
 void http_response_to_buffer(const struct http_response *, struct c_buffer *);

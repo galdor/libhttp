@@ -46,7 +46,7 @@ http_response_delete(struct http_response *response) {
 }
 
 int
-http_response_parse(const char *data, size_t sz,
+http_response_parse(const char *data, size_t sz, uint32_t flags,
                     struct http_response **presponse, size_t *psz) {
     struct http_response *response;
     const char *ptr;
@@ -168,6 +168,23 @@ http_response_parse(const char *data, size_t sz,
 
         ptr += response->body_sz;
         len -= response->body_sz;
+    } else if (response->has_connection_close) {
+        size_t content_length;
+
+        if (flags & HTTP_RESPONSE_PARSE_CONNECTION_CLOSED) {
+            content_length = len;
+
+            if (content_length > HTTP_RESPONSE_MAX_CONTENT_LENGTH)
+                HTTP_FAIL("payload too large");
+
+            response->body_sz = content_length;
+            response->body = c_strndup(ptr, content_length);
+
+            ptr += response->body_sz;
+            len -= response->body_sz;
+        } else {
+            HTTP_TRUNCATED();
+        }
     } else if (response->is_body_chunked) {
         struct http_headers *trailer;
         size_t chunked_data_sz;
@@ -366,6 +383,11 @@ http_response_preprocess_headers(struct http_response *response) {
                              NULL) == -1) {
                 HTTP_FAIL("cannot parse %s header: %s", name, c_get_error());
             }
+
+        /* -- Connection -------------------------------------------------- */
+        } else if (HTTP_HEADER_IS("Connection")) {
+            if (strcasecmp(value, "close") == 0)
+                response->has_connection_close = true;
 
         /* -- Transfer-Encoding ------------------------------------------- */
         } else if (HTTP_HEADER_IS("Transfer-Encoding")) {

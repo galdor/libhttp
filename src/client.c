@@ -19,7 +19,7 @@
 
 static void http_client_on_tcp_event(struct io_tcp_client *,
                                      enum io_tcp_client_event, void *);
-static void http_client_on_data(struct http_client *);
+static void http_client_on_data(struct http_client *, bool);
 static void http_client_on_response(struct http_client *,
                                     struct http_response *);
 
@@ -285,6 +285,7 @@ http_client_on_tcp_event(struct io_tcp_client *tcp_client,
         break;
 
     case IO_TCP_CLIENT_EVENT_CONN_CLOSED:
+        http_client_on_data(client, true);
         http_client_signal_event(client, HTTP_CLIENT_EVENT_CONN_CLOSED, NULL);
         break;
 
@@ -293,24 +294,29 @@ http_client_on_tcp_event(struct io_tcp_client *tcp_client,
         break;
 
     case IO_TCP_CLIENT_EVENT_DATA_READ:
-        http_client_on_data(client);
+        http_client_on_data(client, false);
         break;
     }
 }
 
 static void
-http_client_on_data(struct http_client *client) {
+http_client_on_data(struct http_client *client, bool connection_closed) {
     struct c_buffer *rbuf;
 
     rbuf = io_tcp_client_rbuf(client->tcp_client);
 
     while (c_buffer_length(rbuf) > 0) {
         struct http_response *response;
+        uint32_t flags;
         size_t sz;
         int ret;
 
+        flags = 0;
+        if (connection_closed)
+            flags |= HTTP_RESPONSE_PARSE_CONNECTION_CLOSED;
+
         ret = http_response_parse(c_buffer_data(rbuf), c_buffer_length(rbuf),
-                                  &response, &sz);
+                                  flags, &response, &sz);
         if (ret == -1) {
             http_client_error(client, "cannot parse response: %s",
                               c_get_error());
