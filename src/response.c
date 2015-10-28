@@ -283,6 +283,11 @@ http_response_status(const struct http_response *response) {
     return response->status;
 }
 
+const char *
+http_response_reason(const struct http_response *response) {
+    return response->reason;
+}
+
 void
 http_response_add_header(struct http_response *response,
                         const char *name, const char *value) {

@@ -273,6 +273,7 @@ struct http_response;
 
 struct http_request *http_response_request(const struct http_response *);
 enum http_status http_response_status(const struct http_response *);
+const char *http_response_reason(const struct http_response *);
 
 size_t http_response_nb_headers(const struct http_response *);
 bool http_response_has_header(const struct http_response *, const char *);
