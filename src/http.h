@@ -22,6 +22,15 @@
 #include <io.h>
 
 /* ---------------------------------------------------------------------------
+ *  Base64
+ * ------------------------------------------------------------------------ */
+uint8_t *http_base64_decode(const void *, size_t, size_t *);
+uint8_t *http_base64_encode(const void *, size_t, size_t *);
+
+char *http_base64_decode_string(const char *);
+char *http_base64_encode_string(const char *);
+
+/* ---------------------------------------------------------------------------
  *  Path
  * ------------------------------------------------------------------------ */
 struct http_path *http_path_new(void);
