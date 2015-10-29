@@ -231,6 +231,11 @@ void http_headers_merge_nocopy(struct http_headers *, struct http_headers *);
  * ------------------------------------------------------------------------ */
 struct http_request;
 
+void http_request_delete(struct http_request *);
+
+int http_request_parse(const char *, size_t, struct http_request **,
+                       size_t *, enum http_status *);
+
 enum http_method http_request_method(const struct http_request *);
 struct http_url *http_request_target_url(const struct http_request *);
 
@@ -241,6 +246,16 @@ bool http_request_has_header(const struct http_request *, const char *);
 const char *http_request_nth_header(const struct http_request *, size_t,
                                     const char **);
 const char *http_request_header(const struct http_request *, const char *);
+
+void http_request_add_header(struct http_request *, const char *, const char *);
+void http_request_add_header_nocopy(struct http_request *, const char *, char *);
+void http_request_set_header(struct http_request *, const char *,
+                             const char *);
+void http_request_set_header_vprintf(struct http_request *, const char *,
+                                     const char *, va_list);
+void http_request_set_header_printf(struct http_request *, const char *,
+                                    const char *, ...)
+    __attribute__ ((format(printf, 3, 4)));
 
 size_t http_request_body_size(const struct http_request *);
 void *http_request_body(const struct http_request *, size_t *);
