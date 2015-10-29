@@ -332,7 +332,7 @@ struct http_server_conn {
 
     void *private_data;
 
-    bool use_pipelining;
+    bool disabled_keepalive;
     bool do_close;
 };
 

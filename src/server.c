@@ -37,7 +37,7 @@ http_server_conn_new(struct http_server *server,
     conn->requests = c_queue_new();
     conn->responses = c_queue_new();
 
-    conn->use_pipelining = true;
+    conn->disabled_keepalive = true;
 
     return conn;
 }
@@ -82,8 +82,8 @@ http_server_conn_private_data(const struct http_server_conn *conn) {
 }
 
 void
-http_server_conn_disable_pipelining(struct http_server_conn *conn) {
-    conn->use_pipelining = false;
+http_server_conn_disable_keepalive(struct http_server_conn *conn) {
+    conn->disabled_keepalive = false;
 }
 
 void
@@ -117,7 +117,7 @@ http_server_conn_send_response(struct http_server_conn *conn,
 
     http_response_finalize(response);
 
-    if (!conn->use_pipelining)
+    if (!conn->disabled_keepalive)
         http_response_set_header(response, "Connection", "close");
 
     if (server->response_cb && !request->dummy)
@@ -131,7 +131,7 @@ http_server_conn_send_response(struct http_server_conn *conn,
 
         http_response_delete(response);
 
-        if (!conn->use_pipelining) {
+        if (!conn->disabled_keepalive) {
             http_server_conn_disconnect(conn);
             return;
         }

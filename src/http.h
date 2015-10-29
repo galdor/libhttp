@@ -438,7 +438,7 @@ http_server_conn_address(const struct http_server_conn *);
 void http_server_conn_set_private_data(struct http_server_conn *, void *);
 void *http_server_conn_private_data(const struct http_server_conn *);
 
-void http_server_conn_disable_pipelining(struct http_server_conn *);
+void http_server_conn_disable_keepalive(struct http_server_conn *);
 
 void http_server_conn_disconnect(struct http_server_conn *);
 
