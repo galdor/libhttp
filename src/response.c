@@ -171,7 +171,7 @@ http_response_parse(const char *data, size_t sz, uint32_t flags,
     } else if (response->has_connection_close) {
         size_t content_length;
 
-        if (flags & HTTP_RESPONSE_PARSE_CONNECTION_CLOSED) {
+        if (flags & HTTP_RESPONSE_PARSE_EOF) {
             content_length = len;
 
             if (content_length > HTTP_RESPONSE_MAX_CONTENT_LENGTH)

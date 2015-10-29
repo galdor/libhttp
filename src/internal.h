@@ -230,7 +230,7 @@ struct http_response *http_response_new(void);
 void http_response_delete(struct http_response *);
 
 enum http_response_parse_flag {
-    HTTP_RESPONSE_PARSE_CONNECTION_CLOSED = (1 << 0),
+    HTTP_RESPONSE_PARSE_EOF = (1 << 0),
 };
 
 int http_response_parse(const char *, size_t, uint32_t,
