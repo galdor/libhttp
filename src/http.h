@@ -349,6 +349,8 @@ void http_client_close(struct http_client *);
 void http_client_disconnect(struct http_client *);
 bool http_client_is_connected(struct http_client *);
 
+void http_client_send_request(struct http_client *, struct http_request *,
+                              http_client_response_cb, void *);
 void http_client_request_empty(struct http_client *, enum http_method,
                                struct http_url *, struct http_headers *,
                                http_client_response_cb, void *);
