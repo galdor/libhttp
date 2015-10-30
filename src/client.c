@@ -319,7 +319,7 @@ http_client_on_data(struct http_client *client, bool connection_closed) {
 
         flags = 0;
         if (connection_closed)
-            flags |= HTTP_RESPONSE_PARSE_CONNECTION_CLOSED;
+            flags |= HTTP_RESPONSE_PARSE_EOF;
 
         ret = http_response_parse(c_buffer_data(rbuf), c_buffer_length(rbuf),
                                   flags, &response, &sz);
