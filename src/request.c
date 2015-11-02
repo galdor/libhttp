@@ -123,6 +123,7 @@ http_request_parse(const char *data, size_t sz,
     } else {
         struct http_url *url;
         struct http_path *path;
+        const char *path_string;
 
         url = http_url_parse(request->target);
         if (!url) {
@@ -130,7 +131,13 @@ http_request_parse(const char *data, size_t sz,
                       c_get_error());
         }
 
-        path = http_path_parse(url->path);
+        if (url->path) {
+            path_string = url->path;
+        } else {
+            path_string = "/";
+        }
+
+        path = http_path_parse(path_string);
         if (!path) {
             HTTP_FAIL(HTTP_400_BAD_REQUEST, "invalid request target path: %s",
                       c_get_error());
