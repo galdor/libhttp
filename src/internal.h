@@ -252,6 +252,8 @@ struct http_client {
     void *event_cb_arg;
 
     struct c_queue *requests;
+
+    bool do_close;
 };
 
 void http_client_signal_event(struct http_client *,

@@ -134,11 +134,13 @@ http_client_connect_url(struct http_client *client,
 void
 http_client_close(struct http_client *client) {
     io_tcp_client_close(client->tcp_client);
+    client->do_close = true;
 }
 
 void
 http_client_disconnect(struct http_client *client) {
     io_tcp_client_disconnect(client->tcp_client);
+    client->do_close = true;
 }
 
 bool
@@ -335,6 +337,8 @@ http_client_on_data(struct http_client *client, bool connection_closed) {
         c_buffer_skip(rbuf, sz);
 
         http_client_on_response(client, response);
+        if (client->do_close)
+            return;
     }
 }
 
