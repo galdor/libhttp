@@ -276,6 +276,11 @@ http_request_set_header_printf(struct http_request *request,
     va_end(ap);
 }
 
+struct http_headers *
+http_request_headers(const struct http_request *request) {
+    return request->headers;
+}
+
 size_t
 http_request_nb_headers(const struct http_request *request) {
     return http_headers_nb_headers(request->headers);

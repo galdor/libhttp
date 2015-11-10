@@ -254,6 +254,7 @@ struct http_url *http_request_target_url(const struct http_request *);
 
 struct http_server_conn *http_request_server_conn(const struct http_request *);
 
+struct http_headers *http_request_headers(const struct http_request *);
 size_t http_request_nb_headers(const struct http_request *);
 bool http_request_has_header(const struct http_request *, const char *);
 const char *http_request_nth_header(const struct http_request *, size_t,
