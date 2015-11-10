@@ -263,6 +263,8 @@ const char *http_request_header(const struct http_request *, const char *);
 
 void http_request_set_headers_nocopy(struct http_request *,
                                      struct http_headers *);
+void http_request_set_headers(struct http_request *,
+                              const struct http_headers *);
 void http_request_add_header(struct http_request *, const char *, const char *);
 void http_request_add_header_nocopy(struct http_request *,
                                     const char *, char *);
