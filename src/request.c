@@ -228,6 +228,13 @@ http_request_target_url(const struct http_request *request) {
     return request->target_url;
 }
 
+void
+http_request_set_target_url(struct http_request *request,
+                            const struct http_url *url) {
+    http_url_delete(request->target_url);
+    request->target_url = http_url_clone(url);
+}
+
 struct http_server_conn *
 http_request_server_conn(const struct http_request *request) {
     return request->conn;

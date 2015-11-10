@@ -250,7 +250,10 @@ int http_request_parse(const char *, size_t, struct http_request **,
                        size_t *, enum http_status *);
 
 enum http_method http_request_method(const struct http_request *);
+
 struct http_url *http_request_target_url(const struct http_request *);
+void http_request_set_target_url(struct http_request *,
+                                 const struct http_url *);
 
 struct http_server_conn *http_request_server_conn(const struct http_request *);
 
