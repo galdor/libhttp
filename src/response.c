@@ -170,6 +170,34 @@ http_response_parse(const char *data, size_t sz, uint32_t flags,
 
         ptr += response->body_sz;
         len -= response->body_sz;
+    } else if (response->is_body_chunked) {
+        struct http_headers *trailer;
+        size_t chunked_data_sz;
+
+        ret = http_chunked_data_parse(ptr, len,
+                                      &response->body, &response->body_sz,
+                                      &chunked_data_sz);
+        if (ret == -1)
+            HTTP_FAIL("invalid chunked body: %s", c_get_error());
+        if (ret == 0)
+            HTTP_TRUNCATED();
+        printf("PARSED CHUNKED DATA %zu -> %zu\n", len, chunked_data_sz);
+
+        ptr += chunked_data_sz;
+        len -= chunked_data_sz;
+
+        /* Trailer */
+        ret = http_headers_parse(ptr, len, &trailer, NULL, &toklen);
+        if (ret == -1)
+            HTTP_FAIL(NULL);
+        if (ret == 0)
+            HTTP_TRUNCATED();
+
+        http_headers_merge_nocopy(response->headers, trailer);
+        http_headers_delete(trailer);
+
+        ptr += toklen;
+        len -= toklen;
     } else if (response->has_connection_close) {
         size_t content_length;
 
@@ -187,33 +215,8 @@ http_response_parse(const char *data, size_t sz, uint32_t flags,
         } else {
             HTTP_TRUNCATED();
         }
-    } else if (response->is_body_chunked) {
-        struct http_headers *trailer;
-        size_t chunked_data_sz;
-
-        ret = http_chunked_data_parse(ptr, len,
-                                      &response->body, &response->body_sz,
-                                      &chunked_data_sz);
-        if (ret == -1)
-            HTTP_FAIL("invalid chunked body: %s", c_get_error());
-        if (ret == 0)
-            HTTP_TRUNCATED();
-
-        ptr += chunked_data_sz;
-        len -= chunked_data_sz;
-
-        /* Trailer */
-        ret = http_headers_parse(ptr, len, &trailer, NULL, &toklen);
-        if (ret == -1)
-            HTTP_FAIL(NULL);
-        if (ret == 0)
-            HTTP_TRUNCATED();
-
-        http_headers_merge_nocopy(response->headers, trailer);
-        http_headers_delete(trailer);
-
-        ptr += toklen;
-        len -= toklen;
+    } else {
+        HTTP_FAIL("missing content length");
     }
 
 #undef HTTP_FAIL
