@@ -80,7 +80,7 @@ http_chunked_data_parse(const void *data, size_t sz,
         if (len < 2)
             HTTP_TRUNCATED();
         if (ptr[0] != '\r' || ptr[1] != '\n')
-            HTTP_FAIL("malformed status line");
+            HTTP_FAIL("malformed chunk size line");
 
         ptr += 2;
         len -= 2;
@@ -98,7 +98,7 @@ http_chunked_data_parse(const void *data, size_t sz,
         if (len < 2)
             HTTP_TRUNCATED();
         if (ptr[0] != '\r' || ptr[1] != '\n')
-            HTTP_FAIL("malformed status line");
+            HTTP_FAIL("malformed chunk end");
 
         ptr += 2;
         len -= 2;
