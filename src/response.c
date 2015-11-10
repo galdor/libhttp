@@ -181,7 +181,6 @@ http_response_parse(const char *data, size_t sz, uint32_t flags,
             HTTP_FAIL("invalid chunked body: %s", c_get_error());
         if (ret == 0)
             HTTP_TRUNCATED();
-        printf("PARSED CHUNKED DATA %zu -> %zu\n", len, chunked_data_sz);
 
         ptr += chunked_data_sz;
         len -= chunked_data_sz;
