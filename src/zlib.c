@@ -30,8 +30,8 @@ http_zlib_inflate(const uint8_t *idata, size_t isize, size_t *posize) {
     assert(isize <= UINT_MAX);
 
     memset(&stream, 0, sizeof(z_stream));
-    ret = inflateInit2(&stream, 15 + 32); /* support zlib/gzip decoding
-                                           * do not ask... */
+    ret = inflateInit2(&stream, MAX_WBITS + 32); /* support zlib/gzip decoding
+                                                  * do not ask... */
     if (ret != Z_OK) {
         c_set_error("cannot initialize stream: %s", zError(ret));
         return NULL;
