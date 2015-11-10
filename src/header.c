@@ -46,6 +46,23 @@ http_headers_delete(struct http_headers *headers) {
     c_free0(headers, sizeof(struct http_headers));
 }
 
+struct http_headers *
+http_headers_clone(const struct http_headers *headers) {
+    struct http_headers *nheaders;
+
+    nheaders = http_headers_new();
+
+    for (size_t i = 0; i < c_vector_length(headers->headers); i++) {
+        struct http_header *header;
+
+        header = c_vector_entry(headers->headers, i);
+
+        http_headers_add(nheaders, header->name, header->value);
+    }
+
+    return nheaders;
+}
+
 int
 http_headers_parse(const char *data, size_t sz, struct http_headers **pheaders,
                    enum http_status *pstatus, size_t *psz) {

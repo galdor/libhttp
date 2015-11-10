@@ -220,6 +220,8 @@ char *http_generate_basic_auth_header(const char *, const char *);
 struct http_headers *http_headers_new(void);
 void http_headers_delete(struct http_headers *);
 
+struct http_headers *http_headers_clone(const struct http_headers *);
+
 size_t http_headers_nb_headers(struct http_headers *);
 const char *http_headers_nth_header(struct http_headers *, size_t, const char **);
 const char *http_headers_header(struct http_headers *, const char *);
