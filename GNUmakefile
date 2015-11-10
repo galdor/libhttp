@@ -11,6 +11,7 @@ CFLAGS+= -std=c99
 CFLAGS+= -Wall -Wextra -Werror -Wsign-conversion
 CFLAGS+= -Wno-unused-parameter -Wno-unused-function
 
+LDFLAGS+= -lz
 LDFLAGS+= $(ldflags)
 
 PANDOC_OPTS= -s --toc --email-obfuscation=none

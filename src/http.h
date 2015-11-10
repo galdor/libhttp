@@ -106,6 +106,7 @@ http_media_type_set_parameter_nocopy(struct http_media_type *,
 /* ---------------------------------------------------------------------------
  *  Protocol
  * ------------------------------------------------------------------------ */
+/* Version */
 enum http_version {
     HTTP_1_0,
     HTTP_1_1,
@@ -114,6 +115,7 @@ enum http_version {
 const char *http_version_to_string(enum http_version);
 int http_version_parse(const char *, size_t, enum http_version *);
 
+/* Method */
 enum http_method {
     HTTP_GET,
     HTTP_HEAD,
@@ -128,6 +130,7 @@ enum http_method {
 const char *http_method_to_string(enum http_method);
 int http_method_parse(const char *, size_t, enum http_method *);
 
+/* Status */
 enum http_status {
     /* 1xx */
     HTTP_100_CONTINUE                        = 100,
@@ -193,6 +196,14 @@ enum http_status {
 const char *http_status_to_string(enum http_status);
 
 bool http_status_is_success(enum http_status);
+
+/* Content coding */
+enum http_content_coding {
+    HTTP_CONTENT_CODING_GZIP,
+};
+
+const char *http_content_coding_to_string(enum http_content_coding);
+int http_content_coding_parse(const char *, enum http_content_coding *);
 
 /* ---------------------------------------------------------------------------
  *  Authentication
@@ -341,6 +352,7 @@ void http_client_set_event_cb(struct http_client *,
 
 int http_client_enable_ssl(struct http_client *,
                            const struct io_ssl_client_cfg *);
+void http_client_toggle_gzip_decoding(struct http_client *, bool);
 
 int http_client_connect(struct http_client *, const char *, uint16_t);
 int http_client_connect_url(struct http_client *, const struct http_url *,

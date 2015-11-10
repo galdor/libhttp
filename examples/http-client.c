@@ -27,6 +27,8 @@ struct httpex {
     struct c_ptr_vector *urls;
     size_t nb_responses;
     bool do_exit;
+
+    bool use_compression;
 };
 
 static void httpex_die(const char *, ...)
@@ -57,6 +59,7 @@ main(int argc, char **argv) {
     c_command_line_add_option(cmdline, NULL, "ca-dir",
                               "the ssl ca certificate directory",
                               "path", NULL);
+    c_command_line_add_flag(cmdline, "z", "gzip", "enable compression");
 
     c_command_line_add_argument(cmdline, "the host to connect to", "host");
     c_command_line_add_argument(cmdline, "the port to connect on", "port");
@@ -85,6 +88,8 @@ main(int argc, char **argv) {
         c_ptr_vector_append(httpex.urls, url);
     }
 
+    httpex.use_compression = c_command_line_is_option_set(cmdline, "gzip");
+
     use_ssl = c_command_line_is_option_set(cmdline, "ssl");
     if (use_ssl) {
         ca_path = c_command_line_option_value(cmdline, "ca");
@@ -103,6 +108,9 @@ main(int argc, char **argv) {
 
     httpex.client = http_client_new(httpex.base);
     http_client_set_event_cb(httpex.client, httpex_on_client_event, NULL);
+
+    if (httpex.use_compression)
+        http_client_toggle_gzip_decoding(httpex.client, true);
 
     if (use_ssl) {
         struct io_ssl_client_cfg cfg;
@@ -179,12 +187,19 @@ httpex_on_client_event(struct http_client *client,
 
     case HTTP_CLIENT_EVENT_CONN_ESTABLISHED:
         for (size_t i = 0; i < c_ptr_vector_length(httpex.urls); i++) {
+            struct http_headers *headers;
             struct http_url *url;
+
+            headers = http_headers_new();
+
+            if (httpex.use_compression)
+                http_headers_set(headers, "Accept-Encoding", "gzip");
 
             url = c_ptr_vector_entry(httpex.urls, i);
 
             http_client_request_empty(client, HTTP_GET, http_url_clone(url),
-                                      NULL, httpex_on_client_response, NULL);
+                                      headers,
+                                      httpex_on_client_response, NULL);
         }
         break;
 

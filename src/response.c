@@ -42,6 +42,8 @@ http_response_delete(struct http_response *response) {
 
     c_free(response->body);
 
+    c_vector_delete(response->content_codings);
+
     c_free0(response, sizeof(struct http_response));
 }
 
@@ -369,6 +371,46 @@ http_response_can_have_body(const struct http_response *response) {
     return true;
 }
 
+int
+http_response_decode_body_gzip(struct http_response *response) {
+    char *body;
+    size_t body_sz;
+
+    body = http_zlib_inflate(response->body, response->body_sz, &body_sz);
+    if (!body)
+        return -1;
+
+    c_free(response->body);
+
+    response->body = body;
+    response->body_sz = body_sz;
+
+    return 0;
+}
+
+size_t
+http_response_nb_content_codings(const struct http_response *response) {
+    if (!response->content_codings)
+        return 0;
+
+    return c_vector_length(response->content_codings);
+}
+
+enum http_content_coding
+http_response_content_coding(const struct http_response *response,
+                             size_t idx) {
+    void *entry;
+
+    entry = c_vector_entry(response->content_codings, idx);
+    return *(enum http_content_coding *)entry;
+}
+
+void
+http_response_remove_content_coding(const struct http_response *response,
+                                    size_t idx) {
+    c_vector_remove(response->content_codings, idx);
+}
+
 static int
 http_response_preprocess_headers(struct http_response *response) {
 #define HTTP_FAIL(fmt_, ...)                  \
@@ -394,6 +436,32 @@ http_response_preprocess_headers(struct http_response *response) {
                 HTTP_FAIL("cannot parse %s header: %s", name, c_get_error());
             }
 
+        /* -- Content-Encoding -------------------------------------------- */
+        } else if (HTTP_HEADER_IS("Content-Encoding")) {
+            struct c_ptr_vector *tokens;
+
+            tokens = http_list_parse(value);
+            if (!tokens)
+                HTTP_FAIL("cannot parse %s header: %s", name, c_get_error());
+
+            response->content_codings = c_vector_new(
+                sizeof(enum http_content_coding));
+
+            for (size_t i = 0; i < c_ptr_vector_length(tokens); i++) {
+                enum http_content_coding coding;
+                const char *token;
+
+                token = c_ptr_vector_entry(tokens, i);
+                if (http_content_coding_parse(token, &coding) == -1) {
+                    http_string_vector_delete(tokens);
+                    HTTP_FAIL("unknown content coding '%s'", token);
+                }
+
+                c_vector_append(response->content_codings, &coding);
+            }
+
+            http_string_vector_delete(tokens);
+
         /* -- Connection -------------------------------------------------- */
         } else if (HTTP_HEADER_IS("Connection")) {
             if (strcasecmp(value, "close") == 0)
@@ -404,9 +472,8 @@ http_response_preprocess_headers(struct http_response *response) {
             struct c_ptr_vector *tokens;
 
             tokens = http_list_parse(value);
-            if (!tokens) {
+            if (!tokens)
                 HTTP_FAIL("cannot parse %s header: %s", name, c_get_error());
-            }
 
             for (size_t i = 0; i < c_ptr_vector_length(tokens); i++) {
                 const char *token;

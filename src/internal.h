@@ -25,6 +25,8 @@
 #include <strings.h>
 #include <time.h>
 
+#include <zlib.h>
+
 #include "http.h"
 
 /* ---------------------------------------------------------------------------
@@ -41,6 +43,11 @@ int http_format_timestamp(char buf[static HTTP_RFC1123_DATE_BUFSZ], size_t,
  *  Strings
  * ------------------------------------------------------------------------ */
 void http_string_vector_delete(struct c_ptr_vector *);
+
+/* ---------------------------------------------------------------------------
+ *  zlib
+ * ------------------------------------------------------------------------ */
+void *http_zlib_inflate(const uint8_t *, size_t, size_t *);
 
 /* ---------------------------------------------------------------------------
  *  Path
@@ -224,6 +231,8 @@ struct http_response {
     bool is_body_chunked;
 
     bool has_connection_close;
+
+    struct c_vector *content_codings;
 };
 
 struct http_response *http_response_new(void);
@@ -241,12 +250,21 @@ void http_response_to_buffer(const struct http_response *, struct c_buffer *);
 
 bool http_response_can_have_body(const struct http_response *);
 
+int http_response_decode_body_gzip(struct http_response *);
+
+size_t http_response_nb_content_codings(const struct http_response *);
+enum http_content_coding
+http_response_content_coding(const struct http_response *, size_t);
+void http_response_remove_content_coding(const struct http_response *, size_t);
+
 /* ---------------------------------------------------------------------------
  *  Client
  * ------------------------------------------------------------------------ */
 struct http_client {
     struct io_base *io_base;
     struct io_tcp_client *tcp_client;
+
+    bool decode_gzip;
 
     http_client_event_cb event_cb;
     void *event_cb_arg;

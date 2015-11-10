@@ -202,6 +202,40 @@ http_status_is_success(enum http_status status) {
     return status >= 200 && status < 300;
 }
 
+const char *
+http_content_coding_to_string(enum http_content_coding coding) {
+    static const char *strings[] = {
+        [HTTP_CONTENT_CODING_GZIP] = "gzip",
+    };
+    size_t nb_strings = sizeof(strings) / sizeof(strings[0]);
+
+    if (coding >= nb_strings)
+        return NULL;
+
+    return strings[coding];
+}
+
+int
+http_content_coding_parse(const char *string,
+                          enum http_content_coding *pcoding) {
+    static const struct {
+        const char *string;
+        enum http_content_coding coding;
+    } values[] = {
+        {"gzip", HTTP_CONTENT_CODING_GZIP},
+    };
+    size_t nb_values = sizeof(values) / sizeof(values[0]);
+
+    for (size_t i = 0; i < nb_values; i++) {
+        if (strcmp(values[i].string, string) == 0) {
+            *pcoding = values[i].coding;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
 struct c_ptr_vector *
 http_list_parse(const char *string) {
     struct c_ptr_vector *entries;

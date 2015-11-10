@@ -80,6 +80,11 @@ http_client_enable_ssl(struct http_client *client,
     return io_tcp_client_enable_ssl(client->tcp_client, cfg);
 }
 
+void
+http_client_toggle_gzip_decoding(struct http_client *client, bool enable) {
+    client->decode_gzip = enable;
+}
+
 int
 http_client_connect(struct http_client *client,
                     const char *host, uint16_t port) {
@@ -363,6 +368,7 @@ http_client_on_response(struct http_client *client,
     http_client_trace(client, "body: %zu bytes", response->body_sz);
 #endif
 
+    /* Request/response matching */
     request = c_queue_pop(client->requests);
     if (!request) {
         http_client_error(client, "response received without request");
@@ -374,9 +380,42 @@ http_client_on_response(struct http_client *client,
 
     response->request = request;
 
+    /* Decoding */
+    if (response->body && http_response_nb_content_codings(response) > 0) {
+        size_t i;
+
+        i = http_response_nb_content_codings(response) - 1;
+        for (;;) {
+            enum http_content_coding coding;
+
+            coding = http_response_content_coding(response, i);
+
+            if (coding == HTTP_CONTENT_CODING_GZIP) {
+                if (!client->decode_gzip)
+                    break;
+
+                if (http_response_decode_body_gzip(response) == -1) {
+                    http_client_error(client, "cannot decode gzip body: %s",
+                                      c_get_error());
+                    http_client_disconnect(client);
+                    goto end;
+                }
+
+                http_response_remove_content_coding(response, i);
+            }
+
+            if (i == 0)
+                break;
+            i--;
+        }
+    }
+
+    /* Callback */
     if (request->response_cb)
         request->response_cb(client, response, request->response_cb_arg);
 
+    /* Cleaning */
+end:
     http_request_delete(request);
     http_response_delete(response);
 }
