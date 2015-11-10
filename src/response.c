@@ -44,6 +44,8 @@ http_response_delete(struct http_response *response) {
 
     c_vector_delete(response->content_codings);
 
+    http_url_delete(response->redirection_location);
+
     c_free0(response, sizeof(struct http_response));
 }
 
@@ -413,6 +415,11 @@ http_response_remove_content_coding(const struct http_response *response,
     c_vector_remove(response->content_codings, idx);
 }
 
+struct http_url *
+http_response_redirection_location(const struct http_response *response) {
+    return response->redirection_location;
+}
+
 static int
 http_response_preprocess_headers(struct http_response *response) {
 #define HTTP_FAIL(fmt_, ...)                  \
@@ -496,6 +503,19 @@ http_response_preprocess_headers(struct http_response *response) {
             }
 
             http_string_vector_delete(tokens);
+
+        /* -- Location ---------------------------------------------------- */
+        } else if (HTTP_HEADER_IS("Location")) {
+            if (response->status >= 300 && response->status < 400) {
+                struct http_url *url;
+
+                url = http_url_parse(value);
+                if (!url)
+                    HTTP_FAIL("invalid %s header: %s", name, c_get_error());
+
+                response->redirection_location = url;
+            }
+
         }
 
 #undef HTTP_HEADER_IS

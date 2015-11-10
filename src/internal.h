@@ -233,6 +233,8 @@ struct http_response {
     bool has_connection_close;
 
     struct c_vector *content_codings;
+
+    struct http_url *redirection_location;
 };
 
 struct http_response *http_response_new(void);

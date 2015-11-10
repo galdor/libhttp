@@ -322,6 +322,9 @@ void http_response_set_header_printf(struct http_response *, const char *,
 
 void *http_response_body(const struct http_response *, size_t *);
 
+struct http_url *
+http_response_redirection_location(const struct http_response *);
+
 /* ---------------------------------------------------------------------------
  *  Client
  * ------------------------------------------------------------------------ */
