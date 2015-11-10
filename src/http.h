@@ -260,8 +260,11 @@ const char *http_request_nth_header(const struct http_request *, size_t,
                                     const char **);
 const char *http_request_header(const struct http_request *, const char *);
 
+void http_request_set_headers_nocopy(struct http_request *,
+                                     struct http_headers *);
 void http_request_add_header(struct http_request *, const char *, const char *);
-void http_request_add_header_nocopy(struct http_request *, const char *, char *);
+void http_request_add_header_nocopy(struct http_request *,
+                                    const char *, char *);
 void http_request_set_header(struct http_request *, const char *,
                              const char *);
 void http_request_set_header_vprintf(struct http_request *, const char *,

@@ -234,6 +234,13 @@ http_request_server_conn(const struct http_request *request) {
 }
 
 void
+http_request_set_headers_nocopy(struct http_request *request,
+                                struct http_headers *headers) {
+    http_headers_delete(request->headers);
+    request->headers = headers;
+}
+
+void
 http_request_add_header(struct http_request *request,
                         const char *name, const char *value) {
     http_request_add_header_nocopy(request, name, c_strdup(value));
