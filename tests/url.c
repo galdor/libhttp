@@ -171,6 +171,12 @@ TEST(base) {
     TEST_STRING_EQ(value, "bar");
     http_url_delete(url);
 
+    HTTPT_PARSE_URL("http://example.com?a=1&a=2");
+    TEST_STRING_EQ(url->query, "a=1&a=2");
+    TEST_BOOL_EQ(http_url_has_query_parameter(url, "a", &value), true);
+    TEST_STRING_EQ(value, "2");
+    http_url_delete(url);
+
     HTTPT_PARSE_URL("http://example.com?:path@=/a/b/c&?=?");
     TEST_STRING_EQ(url->query, ":path@=/a/b/c&?=?");
     TEST_BOOL_EQ(http_url_has_query_parameter(url, ":path@", &value), true);
