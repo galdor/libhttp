@@ -206,6 +206,16 @@ http_client_send_request(struct http_client *client,
 
     http_request_finalize(request, client);
 
+#if 0
+    struct c_buffer *buf = c_buffer_new();
+    char *string;
+    http_request_to_buffer(request, buf);
+    string = c_buffer_extract_string(buf, NULL);
+    c_buffer_delete(buf);
+    printf("\n%s\n", string);
+    c_free(string);
+#endif
+
     request->response_cb = cb;
     request->response_cb_arg = cb_arg;
 

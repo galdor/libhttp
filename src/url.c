@@ -768,6 +768,16 @@ http_url_equal(const struct http_url *url1, const struct http_url *url2) {
     return true;
 }
 
+bool
+http_url_is_http(const struct http_url *url) {
+    return url->scheme && (strcasecmp(url->scheme, "http") == 0);
+}
+
+bool
+http_url_is_https(const struct http_url *url) {
+    return url->scheme && (strcasecmp(url->scheme, "https") == 0);
+}
+
 static bool
 http_url_is_scheme_first_char(char c) {
     return (c >= 'a' && c <= 'z')

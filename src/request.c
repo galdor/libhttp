@@ -667,6 +667,7 @@ http_request_finalize(struct http_request *request,
     struct http_url *url;
     const char *host;
     uint16_t port;
+    bool is_default_port;
 
     url = request->target_url;
 
@@ -674,7 +675,14 @@ http_request_finalize(struct http_request *request,
     host = url->host ? url->host : http_client_host(client);
     port = url->port ? url->port_number : http_client_port(client);
 
-    http_request_set_header_printf(request, "Host", "%s:%u", host, port);
+    is_default_port = (http_url_is_http(url) && port == 80)
+                   || (http_url_is_https(url) && port == 443);
+
+    if (is_default_port) {
+        http_request_set_header_printf(request, "Host", "%s:%u", host, port);
+    } else {
+        http_request_set_header_printf(request, "Host", "%s", host);
+    }
 
     /* Content-Length */
     if (http_request_can_have_body(request) || request->body) {
