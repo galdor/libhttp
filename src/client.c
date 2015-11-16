@@ -199,18 +199,12 @@ http_client_write_request(struct http_client *client,
 }
 
 void
-http_client_finalize_and_send_request(struct http_client *client,
-                                      struct http_request *request,
-                                      http_client_response_cb cb, void *arg) {
-    http_request_finalize(request, client);
-    http_client_send_request(client, request, cb, arg);
-}
-
-void
 http_client_send_request(struct http_client *client,
                          struct http_request *request,
                          http_client_response_cb cb, void *cb_arg) {
     assert(!request->response_cb);
+
+    http_request_finalize(request, client);
 
     request->response_cb = cb;
     request->response_cb_arg = cb_arg;
@@ -236,7 +230,7 @@ http_client_request_empty(struct http_client *client, enum http_method method,
         http_headers_delete(headers);
     }
 
-    http_client_finalize_and_send_request(client, request, cb, cb_arg);
+    http_client_send_request(client, request, cb, cb_arg);
 }
 
 void
@@ -268,7 +262,7 @@ http_client_request_data_nocopy(struct http_client *client,
     request->body = data;
     request->body_sz = sz;
 
-    http_client_finalize_and_send_request(client, request, cb, cb_arg);
+    http_client_send_request(client, request, cb, cb_arg);
 }
 
 void

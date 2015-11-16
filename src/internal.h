@@ -285,9 +285,6 @@ void http_client_error(struct http_client *, const char *, ...)
 
 void http_client_write_request(struct http_client *,
                                const struct http_request *);
-void http_client_finalize_and_send_request(struct http_client *,
-                                           struct http_request *,
-                                           http_client_response_cb, void *);
 
 /* ---------------------------------------------------------------------------
  *  Router
