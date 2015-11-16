@@ -675,13 +675,16 @@ http_request_finalize(struct http_request *request,
     host = url->host ? url->host : http_client_host(client);
     port = url->port ? url->port_number : http_client_port(client);
 
-    is_default_port = (http_url_is_http(url) && port == 80)
-                   || (http_url_is_https(url) && port == 443);
+    if (io_tcp_client_is_ssl_enabled(client->tcp_client)) {
+        is_default_port = (port == 443);
+    } else {
+        is_default_port = (port == 80);
+    }
 
     if (is_default_port) {
-        http_request_set_header_printf(request, "Host", "%s:%u", host, port);
-    } else {
         http_request_set_header_printf(request, "Host", "%s", host);
+    } else {
+        http_request_set_header_printf(request, "Host", "%s:%u", host, port);
     }
 
     /* Content-Length */

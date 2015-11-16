@@ -84,9 +84,6 @@ const char *http_url_query_parameter(const struct http_url *, const char *);
 
 bool http_url_equal(const struct http_url *, const struct http_url *);
 
-bool http_url_is_http(const struct http_url *);
-bool http_url_is_https(const struct http_url *);
-
 /* ---------------------------------------------------------------------------
  *  MIME
  * ------------------------------------------------------------------------ */
