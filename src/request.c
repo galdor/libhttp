@@ -677,8 +677,10 @@ http_request_finalize(struct http_request *request,
     http_request_set_header_printf(request, "Host", "%s:%u", host, port);
 
     /* Content-Length */
-    http_request_set_header_printf(request, "Content-Length", "%zu",
-                                   request->body_sz);
+    if (http_request_can_have_body(request) || request->body) {
+        http_request_set_header_printf(request, "Content-Length", "%zu",
+                                       request->body_sz);
+    }
 }
 
 void
