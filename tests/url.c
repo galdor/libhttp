@@ -44,6 +44,10 @@ TEST(base) {
     http_url_delete(url);
 
     /* Host */
+    HTTPT_PARSE_URL("//a");
+    TEST_STRING_EQ(url->host, "a");
+    http_url_delete(url);
+
     HTTPT_PARSE_URL("http://a");
     TEST_STRING_EQ(url->host, "a");
     http_url_delete(url);
@@ -53,6 +57,12 @@ TEST(base) {
     http_url_delete(url);
 
     /* Port */
+    HTTPT_PARSE_URL("//a:80");
+    TEST_STRING_EQ(url->host, "a");
+    TEST_STRING_EQ(url->port, "80");
+    TEST_UINT_EQ(url->port_number, 80);
+    http_url_delete(url);
+
     HTTPT_PARSE_URL("http://a:80");
     TEST_STRING_EQ(url->host, "a");
     TEST_STRING_EQ(url->port, "80");

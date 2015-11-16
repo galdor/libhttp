@@ -285,8 +285,13 @@ http_url_parse(const char *string) {
     } while (0)
 
     /* Scheme */
-    if (*ptr == '/')
-        goto path;
+    if (ptr[0] == '/') {
+        if (ptr[1] == '/') {
+            goto authority;
+        } else {
+            goto path;
+        }
+    }
 
     start = ptr;
     if (!(http_url_is_scheme_first_char(*ptr)))
@@ -308,6 +313,7 @@ http_url_parse(const char *string) {
     if (*ptr == ':')
         ptr++;
 
+authority:
     /* Authority */
     if (ptr[0] != '/' || ptr[1] != '/')
         HTTP_FAIL("invalid characters after scheme");
