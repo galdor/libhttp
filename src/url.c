@@ -717,6 +717,57 @@ http_url_query_parameter(const struct http_url *url, const char *name) {
     return NULL;
 }
 
+bool
+http_url_equal(const struct http_url *url1, const struct http_url *url2) {
+    const char *default_port;
+
+#define HTTP_PART_EQUAL(name_, default_)                   \
+    ({                                                     \
+        const char *value1, *value2;                       \
+                                                           \
+        value1 = url1->name_ ? url1->name_ : default_;     \
+        value2 = url2->name_ ? url2->name_ : default_;     \
+                                                           \
+        (value1 && value2) ? (strcmp(value1, value2) == 0) \
+                           : (value1 == value2);           \
+     })
+
+    if (!HTTP_PART_EQUAL(scheme, NULL))
+        return false;
+    if (!HTTP_PART_EQUAL(user, NULL))
+        return false;
+    if (!HTTP_PART_EQUAL(password, NULL))
+        return false;
+
+    if (!HTTP_PART_EQUAL(host, NULL))
+        return false;
+
+    if (url1->scheme) {
+        if (strcasecmp(url1->scheme, "http") == 0) {
+            default_port = "80";
+        } else if (strcasecmp(url1->scheme, "https") == 0) {
+            default_port = "443";
+        } else {
+            default_port = NULL;
+        }
+    } else {
+        default_port = NULL;
+    }
+    if (!HTTP_PART_EQUAL(port, default_port))
+        return false;
+
+    if (!HTTP_PART_EQUAL(path, "/"))
+        return false;
+    if (!HTTP_PART_EQUAL(query, ""))
+        return false;
+    if (!HTTP_PART_EQUAL(fragment, ""))
+        return false;
+
+#undef HTTP_PART_EQUAL
+
+    return true;
+}
+
 static bool
 http_url_is_scheme_first_char(char c) {
     return (c >= 'a' && c <= 'z')

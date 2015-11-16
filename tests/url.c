@@ -249,6 +249,50 @@ TEST(invalid) {
 #undef HTTPT_INVALID_URL
 }
 
+TEST(equal) {
+#define HTTPT_URL_EQUAL(str1_, str2_, eq_)                     \
+    do {                                                       \
+        struct http_url *url1, *url2;                          \
+                                                               \
+        url1 = http_url_parse(str1_);                          \
+        if (!url1)                                             \
+            TEST_ABORT("cannot parse url: %s", c_get_error()); \
+                                                               \
+        url2 = http_url_parse(str2_);                          \
+        if (!url2)                                             \
+            TEST_ABORT("cannot parse url: %s", c_get_error()); \
+                                                               \
+        TEST_BOOL_EQ(http_url_equal(url1, url2), eq_);         \
+                                                               \
+        http_url_delete(url1);                                 \
+        http_url_delete(url2);                                 \
+    } while (0)
+
+    HTTPT_URL_EQUAL("http://a.com", "http://a.com", true);
+    HTTPT_URL_EQUAL("http://x:y@a.com/a/b/c?x=1#foo",
+                    "http://x:y@a.com/a/b/c?x=1#foo",
+                    true);
+
+    HTTPT_URL_EQUAL("http://a.com/", "http://a.com", true);
+    HTTPT_URL_EQUAL("http://a.com?", "http://a.com", true);
+    HTTPT_URL_EQUAL("http://a.com/", "http://a.com?", true);
+    HTTPT_URL_EQUAL("http://a.com:80", "http://a.com", true);
+    HTTPT_URL_EQUAL("https://a.com:443", "https://a.com", true);
+    HTTPT_URL_EQUAL("//a.com:80", "//a.com:80", true);
+    HTTPT_URL_EQUAL("http://a.com", "http://a.com", true);
+
+    HTTPT_URL_EQUAL("http://a.com", "https://a.com", false);
+    HTTPT_URL_EQUAL("http://a.com", "http://b.com", false);
+    HTTPT_URL_EQUAL("//a.com:80", "//a.com", false);
+    HTTPT_URL_EQUAL("http://a.com/foo", "http://a.com/bar", false);
+    HTTPT_URL_EQUAL("http://a.com?foo", "http://a.com?bar", false);
+    HTTPT_URL_EQUAL("http://a.com#foo", "http://a.com#bar", false);
+    HTTPT_URL_EQUAL("http://x:y@a.com", "http://x:z@a.com", false);
+    HTTPT_URL_EQUAL("http://x@a.com", "http://x:z@a.com", false);
+
+#undef HTTPT_URL_EQUAL
+}
+
 int
 main(int argc, char **argv) {
     struct test_suite *suite;
@@ -260,6 +304,7 @@ main(int argc, char **argv) {
 
     TEST_RUN(suite, base);
     TEST_RUN(suite, invalid);
+    TEST_RUN(suite, equal);
 
     test_suite_print_results_and_exit(suite);
 }

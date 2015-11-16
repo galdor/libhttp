@@ -82,6 +82,8 @@ bool http_url_has_query_parameter(const struct http_url *, const char *,
                                   const char **);
 const char *http_url_query_parameter(const struct http_url *, const char *);
 
+bool http_url_equal(const struct http_url *, const struct http_url *);
+
 /* ---------------------------------------------------------------------------
  *  MIME
  * ------------------------------------------------------------------------ */
