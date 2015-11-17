@@ -513,9 +513,6 @@ http_response_preprocess_headers(struct http_response *response) {
                 if (!url)
                     HTTP_FAIL("invalid %s header: %s", name, c_get_error());
 
-                if (!http_url_scheme(url) || !http_url_host(url))
-                    HTTP_FAIL("invalid %s header: url is not absolute", name);
-
                 response->redirection_location = url;
             }
 
