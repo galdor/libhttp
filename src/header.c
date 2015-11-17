@@ -134,8 +134,6 @@ http_headers_parse(const char *data, size_t sz, struct http_headers **pheaders,
             if (len > HTTP_HEADER_VALUE_MAX_LENGTH)
                 HTTP_FAIL(HTTP_400_BAD_REQUEST, "header value too long");
             HTTP_TRUNCATED();
-        } else if (toklen == 0) {
-            HTTP_FAIL(HTTP_400_BAD_REQUEST, "empty header value");
         }
 
         value_start = ptr;
