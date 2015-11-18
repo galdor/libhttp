@@ -37,7 +37,7 @@ http_server_conn_new(struct http_server *server,
     conn->requests = c_queue_new();
     conn->responses = c_queue_new();
 
-    conn->disabled_keepalive = true;
+    conn->disabled_keepalive = false;
 
     return conn;
 }
@@ -83,7 +83,7 @@ http_server_conn_private_data(const struct http_server_conn *conn) {
 
 void
 http_server_conn_disable_keepalive(struct http_server_conn *conn) {
-    conn->disabled_keepalive = false;
+    conn->disabled_keepalive = true;
 }
 
 void
@@ -107,56 +107,51 @@ http_server_conn_send_response(struct http_server_conn *conn,
                                struct http_request *request,
                                struct http_response *response) {
     struct http_server *server;
-
     assert(request->conn == conn);
     assert(!response->request);
 
     server = conn->server;
 
     response->request = request;
-
     http_response_finalize(response);
 
-    if (!conn->disabled_keepalive)
+    if (conn->disabled_keepalive)
         http_response_set_header(response, "Connection", "close");
 
     if (server->response_cb && !request->dummy)
         server->response_cb(response, server->response_cb_arg);
 
-    if (request == c_queue_peek(conn->requests)) {
-        http_server_conn_write_response(conn, response);
+    c_queue_push(conn->responses, response);
+
+    if (request != c_queue_peek(conn->requests))
+        return;
+
+    do {
+        struct http_response *qresponse;
+        struct http_request *qrequest;
+        bool close_required;
+
+        qrequest = c_queue_peek(conn->requests);
+
+        qresponse = c_queue_peek(conn->responses);
+        if (qresponse->request != qrequest)
+            break;
+
+        http_server_conn_write_response(conn, qresponse);
+
+        close_required = http_request_close_connection(qrequest);
 
         c_queue_pop(conn->requests);
         http_request_delete(request);
 
+        c_queue_pop(conn->responses);
         http_response_delete(response);
 
-        if (!conn->disabled_keepalive) {
+        if (close_required || conn->disabled_keepalive) {
             http_server_conn_disconnect(conn);
             return;
         }
-
-        while (c_queue_length(conn->responses) > 0) {
-            struct http_response *oresponse;
-            struct http_request *orequest;
-
-            oresponse = c_queue_peek(conn->responses);
-            orequest = c_queue_peek(conn->requests);
-
-            if (oresponse->request != orequest)
-                break;
-
-            http_server_conn_write_response(conn, oresponse);
-
-            c_queue_pop(conn->requests);
-            http_request_delete(request);
-
-            c_queue_pop(conn->responses);
-            http_response_delete(response);
-        }
-    } else {
-        c_queue_push(conn->responses, response);
-    }
+    } while (c_queue_length(conn->responses) > 0);
 }
 
 void
@@ -303,13 +298,10 @@ http_server_conn_on_request(struct http_server_conn *conn,
     const struct http_route *route;
     struct http_server *server;
     enum http_status status;
-    bool do_close;
 
     server = conn->server;
 
     request->conn = conn;
-
-    do_close = http_request_close_connection(request);
 
     c_queue_push(conn->requests, request);
 
@@ -339,8 +331,6 @@ http_server_conn_on_request(struct http_server_conn *conn,
     route->cb(request, route->cb_arg);
     if (conn->do_close)
         return;
-
-    conn->do_close = do_close;
 }
 
 /* ---------------------------------------------------------------------------

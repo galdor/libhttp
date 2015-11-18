@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <assert.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <string.h>
@@ -26,6 +27,8 @@ struct httpex {
     struct http_server *server;
     struct http_router *router;
     bool do_exit;
+
+    int timer;
 };
 
 static void httpex_die(const char *, ...)
@@ -40,6 +43,8 @@ static void httpex_on_server_event(struct http_server *,
 static void httpex_on_request_root_get(struct http_request *, void *);
 static void httpex_on_request_number_get(struct http_request *, void *);
 static void httpex_on_request_private_get(struct http_request *, void *);
+static void httpex_on_request_delayed_get(struct http_request *, void *);
+static void httpex_on_timer(int, uint64_t, void *);
 
 static struct httpex httpex;
 
@@ -50,6 +55,8 @@ main(int argc, char **argv) {
     uint16_t port;
     bool use_ssl;
     const char *cert_path, *key_path;
+
+    httpex.timer = -1;
 
     cmdline = c_command_line_new();
 
@@ -95,6 +102,8 @@ main(int argc, char **argv) {
                      httpex_on_request_number_get, NULL);
     http_router_bind(httpex.router, "/private", HTTP_GET,
                      httpex_on_request_private_get, NULL);
+    http_router_bind(httpex.router, "/delayed/:n", HTTP_GET,
+                     httpex_on_request_delayed_get, NULL);
 
     httpex.server = http_server_new(httpex.base, httpex.router);
     http_server_set_event_cb(httpex.server, httpex_on_server_event, NULL);
@@ -248,4 +257,43 @@ httpex_on_request_private_get(struct http_request *request, void *arg) {
     }
 
     http_reply_string(request, HTTP_200_OK, NULL, "access authorized");
+}
+
+static void
+httpex_on_request_delayed_get(struct http_request *request, void *arg) {
+    const char *string;
+    uint64_t delay;
+
+    string = http_request_named_parameter(request, "n");
+    if (!string) {
+        http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL, NULL, NULL);
+        return;
+    }
+
+    if (c_parse_u64(string, &delay, NULL) == -1) {
+        http_reply_error(request, HTTP_406_NOT_ACCEPTABLE, NULL, NULL,
+                         "cannot parse delay: %s", c_get_error());
+        return;
+    }
+
+    assert(httpex.timer == -1);
+    httpex.timer = io_base_add_timer(httpex.base, delay * 1000U, 0,
+                                     httpex_on_timer, request);
+    if (httpex.timer == -1) {
+        http_reply_error(request, HTTP_500_INTERNAL_SERVER_ERROR, NULL, NULL,
+                         "cannot create timer: %s", c_get_error());
+        return;
+    }
+}
+
+static void
+httpex_on_timer(int timer, uint64_t delay, void *arg) {
+    struct http_request *request;
+
+    request = arg;
+
+    http_reply_empty(request, HTTP_200_OK, NULL);
+
+    io_base_remove_timer(httpex.base, httpex.timer);
+    httpex.timer = -1;
 }
