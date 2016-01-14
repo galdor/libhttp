@@ -389,6 +389,11 @@ http_response_decode_body_gzip(struct http_response *response) {
     response->body = body;
     response->body_sz = body_sz;
 
+    if (http_response_has_header(response, "Content-Length")) {
+        http_response_set_header_printf(response, "Content-Length",
+                                        "%zu", body_sz);
+    }
+
     return 0;
 }
 
